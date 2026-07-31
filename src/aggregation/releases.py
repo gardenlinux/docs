@@ -132,12 +132,12 @@ gantt
         gantt += f"    section {version}\n"
 
         if extended_date:
-            gantt += f"    SMaint           :active, sm{version}, {released_date}, {extended_date}\n"
-            gantt += f"    ExtMaint         :crit, em{version}, {extended_date}, {eol_date}\n"
+            gantt += f"    Standard Maintenance           :active, sm{version}, {released_date}, {extended_date}\n"
+            gantt += f"    Extended Maintenance         :crit, em{version}, {extended_date}, {eol_date}\n"
         else:
-            gantt += f"    SMaint           :active, sm{version}, {released_date}, {eol_date}\n"
+            gantt += f"    Standard Maintenance           :active, sm{version}, {released_date}, {eol_date}\n"
 
-        gantt += f"    EoMaint          :milestone, eom{version}, {eol_date}, 0d\n"
+        gantt += f"    EOM          :milestone, eom{version}, {eol_date}, 0d\n"
 
     return gantt
 
@@ -218,9 +218,9 @@ def get_timeline_section(gantt_chart: str, title: str) -> str:
 ```
 
 **Legend:**
-- **SMaint** = [Standard Maintenance]({LIFECYCLE_LINKS['standard']}) — Active maintenance with regular updates
-- **ExtMaint** = [Extended Maintenance]({LIFECYCLE_LINKS['extended']}) — Critical CVE fixes only (CVSS ≥7.0)
-- **EoMaint** = [End of Maintenance]({LIFECYCLE_LINKS['eol']}) — No further updates
+- [Standard Maintenance]({LIFECYCLE_LINKS['standard']}) — Active maintenance with regular updates
+- [Extended Maintenance]({LIFECYCLE_LINKS['extended']}) — Critical CVE fixes only (CVSS ≥7.0)
+- **EOM** = [End of Maintenance]({LIFECYCLE_LINKS['eol']}) — No further updates
 """
 
 
