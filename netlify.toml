@@ -1,5 +1,5 @@
 [build]
-command = "make publish"
+command = "pnpm install && pip install -r requirements.txt && make publish"
 publish = "docs/.vitepress/dist"
 
 [build.environment]
