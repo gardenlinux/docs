@@ -53,6 +53,12 @@
       "url": "https://github.com/gardenlinux/glrd",
       "ref": "main",
       "commit": "d24a4d63107fdba44531faf831668a26c7ca20a2"
+    },
+    {
+      "name": "gardenlinux-nvidia-installer",
+      "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
+      "ref": "main",
+      "commit": "bb773a56b4a39d067232b10adf245ee4761c3489"
     }
   ]
 }

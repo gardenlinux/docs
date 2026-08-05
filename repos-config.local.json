@@ -39,6 +39,10 @@
     {
       "name": "glrd",
       "url": "file://../glrd"
+    },
+    {
+      "name": "gardenlinux-nvidia-installer",
+      "url": "file://../gardenlinux-nvidia-installer"
     }
   ]
 }
