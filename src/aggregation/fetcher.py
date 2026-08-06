@@ -11,23 +11,6 @@ from .models import AggregateResult, RepoConfig
 from .sphinx_builder import build_sphinx_markdown
 
 
-def _convert_to_git_pattern(pattern: str) -> str:
-    """
-    Convert Python glob pattern to git sparse-checkout compatible pattern.
-
-    Git doesn't support **, so convert to folder prefix.
-    e.g., "features/**/*.md" -> "features/*"
-    """
-    if "**" in pattern:
-        parts = pattern.split("/")
-        for i, part in enumerate(parts):
-            if "**" in part:
-                parts[i] = "*"
-                return "/".join(parts[: i + 1])
-        return pattern
-    return pattern
-
-
 class DocsFetcher:
     """Handles fetching documentation from remote or local repositories."""
 
@@ -86,10 +69,29 @@ class DocsFetcher:
                 cwd=temp_dir,
             )
 
+            # Enable sparse-checkout in cone-mode
+            subprocess.run(
+                ["git", "config", "core.sparseCheckout", "true"],
+                check=True,
+                capture_output=True,
+                cwd=temp_dir,
+            )
+
             # Fetch the ref (full history to support any locked commit)
             print("  Fetching repository...")
             subprocess.run(
-                ["git", "fetch", "--all"],
+                ["git", "sparse-checkout", "init", "--cone"],
+                check=True,
+                capture_output=True,
+                cwd=temp_dir,
+            )
+
+            # Build sparse-checkout pattern
+            sparse_patterns = self._build_sparse_patterns(repo)
+
+            # Set sparse-checkout patterns
+            subprocess.run(
+                ["git", "sparse-checkout", "set"] + sparse_patterns,
                 check=True,
                 capture_output=True,
                 cwd=temp_dir,
@@ -99,11 +101,21 @@ class DocsFetcher:
             # - In update-locks mode: always checkout the ref (latest)
             # - In normal mode: use locked commit if available, otherwise checkout ref
             if self.update_locks or not repo.commit:
+                fetch_depth_args = ["--depth", "1"]
                 checkout_ref = repo.ref
             else:
+                fetch_depth_args = ["--filter=blob:none"]
                 checkout_ref = repo.commit
 
-            print(f"  Checking out: {checkout_ref}")
+            print(f"  Fetching sparse checkout: {checkout_ref}")
+            print(f"  Patterns: {', '.join(sparse_patterns)}")
+            print(
+                f"  Strategy: {'shallow' if '--depth' in fetch_depth_args else 'partial'}"
+            )
+
+            fetch_cmd = ["git", "fetch"] + fetch_depth_args + ["origin", checkout_ref]
+            subprocess.run(fetch_cmd, check=True, capture_output=True, cwd=temp_dir)
+
             subprocess.run(
                 ["git", "checkout", checkout_ref],
                 check=True,
@@ -163,6 +175,77 @@ class DocsFetcher:
         finally:
             # Cleanup
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+    def _build_sparse_patterns(self, repo: RepoConfig) -> list[str]:
+        """
+        Build sparse-checkout patterns for a repo.
+
+        Uses cone mode patterns which are directory based and not glob patterns.
+
+        Args:
+            repo: Repository configuration
+
+        Returns:
+            List of directory patterns for sparse-checkout
+        """
+        patterns: list[str] = []
+
+        # Always include docs path
+        if repo.docs_path:
+            patterns.append(repo.docs_path)
+
+        # Add root files if necessary
+        if repo.root_files:
+            for file_pattern in repo.root_files:
+                cone_pattern = self._to_cone_pattern(file_pattern)
+                if cone_pattern and cone_pattern not in patterns:
+                    patterns.append(cone_pattern)
+
+        return patterns
+
+    def _to_cone_pattern(self, pattern: str) -> str | None:
+        """
+        Convert a glob pattern to a cone-mode sparse-checkout pattern.
+
+        Cone mode doesn't support globs.
+
+        Examples:
+            "README.md" -> "README.md"  (file at root)
+            "features/*/README.md" -> "features"  (directory)
+            "features/foo/info.yaml" -> "features/foo"  (specific directory)
+            "docs/**/*.md" -> "docs"  (directory)
+
+        Args:
+            pattern: Glob pattern from root_files
+
+        Returns:
+            Cone-compatible pattern as string
+        """
+        pattern = pattern.rstrip("/")
+
+        # If globs, extract directory
+        if any(char in pattern for char in ["*", "?", "[", "]"]):
+            parts = pattern.split("/")
+            for i, part in enumerate(parts):
+                if any(char in part for char in ["*", "?", "[", "]"]):
+                    # Return path up to the glob part
+                    if i == 0:
+                        # Glob at root level; Manually filter later.
+                        return None
+                    return "/".join(parts[:i])
+            return pattern
+
+        # No globs, check if file or directory
+        # For cone pattern, include parent directory
+        if "/" in pattern:
+            # Path: return deepest directory
+            parts = pattern.split("/")
+            # If last part looks like a file with extension, return parent dir
+            if "." in parts[-1]:
+                return "/".join(parts[:-1]) if len(parts) > 1 else parts[-1]
+            return pattern
+
+        return pattern
 
     def _fetch_local(
         self,
