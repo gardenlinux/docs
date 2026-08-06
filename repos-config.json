@@ -4,7 +4,7 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "ref": "main",
-      "commit": "7dc0d272ce9ae6223320bf84b0083ee0dc6c0e04",
+      "commit": "41333a76d54be257d3f0143f1858aebf3fb413b7",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -34,19 +34,19 @@
       "name": "package-linux",
       "url": "https://github.com/gardenlinux/package-linux",
       "ref": "main",
-      "commit": "d5fb162f21a5b06eedfcefe2e78ee00736fd315b"
+      "commit": "628dea114fd5597b98d71bb0d4c22ed37ace685c"
     },
     {
       "name": "package-build",
       "url": "https://github.com/gardenlinux/package-build",
       "ref": "main",
-      "commit": "c571525680671caeac7a1471cd7f2ca812f96474"
+      "commit": "e73ae01f6d8c1869842a7c0d018fb298e12d1da7"
     },
     {
       "name": "repo",
       "url": "https://github.com/gardenlinux/repo",
       "ref": "main",
-      "commit": "e07c14a8a5ddac524d038c5c59687418d2e6492d"
+      "commit": "dd281bfa10b6d8df02400cc548a0e39f1f3b2d64"
     },
     {
       "name": "glrd",
