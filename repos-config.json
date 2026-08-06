@@ -58,7 +58,7 @@
       "name": "gardenlinux-nvidia-installer",
       "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
       "ref": "main",
-      "commit": "bb773a56b4a39d067232b10adf245ee4761c3489"
+      "commit": "a9142eb92cfbedb96e49192e84679fe0ed437dda"
     }
   ]
 }
