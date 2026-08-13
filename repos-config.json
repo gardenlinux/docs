@@ -4,7 +4,7 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "ref": "main",
-      "commit": "41333a76d54be257d3f0143f1858aebf3fb413b7",
+      "commit": "b3b3f7b411d58d6e47e0980317a70904847a4b10",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -17,7 +17,7 @@
       "name": "builder",
       "url": "https://github.com/gardenlinux/builder",
       "ref": "main",
-      "commit": "2363bc8264729642b9b28a046e712a9c7744d7b3"
+      "commit": "c85e728653d33b26d5c97b1cf09d05ad52e78f81"
     },
     {
       "name": "python-gardenlinux-lib",
@@ -58,7 +58,7 @@
       "name": "gardenlinux-nvidia-installer",
       "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
       "ref": "main",
-      "commit": "a9142eb92cfbedb96e49192e84679fe0ed437dda"
+      "commit": "af50d8b5b680976bcea54af0d09628eb45f06375"
     }
   ]
 }
