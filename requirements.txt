@@ -4,7 +4,7 @@ isort
 pytest
 pyyaml
 # glrd @ git+https://github.com/gardenlinux/glrd.git@v4.2.0
-# gardenlinux @ git+https://github.com/gardenlinux/python-gardenlinux-lib.git@2a27700198bc91e0f9b8321960ebc4709d65c41a
+# gardenlinux @ git+https://github.com/gardenlinux/python-gardenlinux-lib.git@4da13c46b04d531d0bccfb5cb882f8581564af3b
 sphinx
 sphinx-markdown-builder
 sphinx-rtd-theme
