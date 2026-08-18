@@ -4,7 +4,7 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "ref": "main",
-      "commit": "b3b3f7b411d58d6e47e0980317a70904847a4b10",
+      "commit": "cbcadeb739e88133d12ba39bb819dc0ad73bd969",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -17,13 +17,13 @@
       "name": "builder",
       "url": "https://github.com/gardenlinux/builder",
       "ref": "main",
-      "commit": "2363bc8264729642b9b28a046e712a9c7744d7b3"
+      "commit": "0196add0ce875ac0b7721c19b2ee3ac37cf84387"
     },
     {
       "name": "python-gardenlinux-lib",
       "url": "https://github.com/gardenlinux/python-gardenlinux-lib",
       "ref": "main",
-      "commit": "2a27700198bc91e0f9b8321960ebc4709d65c41a",
+      "commit": "4da13c46b04d531d0bccfb5cb882f8581564af3b",
       "structure": "sphinx",
       "target_map": {
         "cli.md": "reference/python-gardenlinux-lib-cli.md",
@@ -34,25 +34,31 @@
       "name": "package-linux",
       "url": "https://github.com/gardenlinux/package-linux",
       "ref": "main",
-      "commit": "d5fb162f21a5b06eedfcefe2e78ee00736fd315b"
+      "commit": "39d7639fdaceb3249732eaf8286898a011067600"
     },
     {
       "name": "package-build",
       "url": "https://github.com/gardenlinux/package-build",
       "ref": "main",
-      "commit": "c571525680671caeac7a1471cd7f2ca812f96474"
+      "commit": "c7ef3b1bc0eb03dc33cb9fc53ee5cb5a560d183d"
     },
     {
       "name": "repo",
       "url": "https://github.com/gardenlinux/repo",
       "ref": "main",
-      "commit": "e07c14a8a5ddac524d038c5c59687418d2e6492d"
+      "commit": "dd281bfa10b6d8df02400cc548a0e39f1f3b2d64"
     },
     {
       "name": "glrd",
       "url": "https://github.com/gardenlinux/glrd",
       "ref": "main",
-      "commit": "d24a4d63107fdba44531faf831668a26c7ca20a2"
+      "commit": "19cdb3af2c1f33fdf798ae37b14afa332e4186b8"
+    },
+    {
+      "name": "gardenlinux-nvidia-installer",
+      "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
+      "ref": "main",
+      "commit": "7dd97a72be5e54cd8ba2e531c32c3a56e2e07fa0"
     }
   ]
 }

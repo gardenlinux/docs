@@ -42,7 +42,7 @@ jobs:
           # gardenlinux.* (e.g. oci -> podman, distro_version -> semver) and generate
           # the CLI/API reference pages. Pinning an older release tag here drops
           # those deps and breaks the python-gardenlinux-lib-cli reference.
-          pip install git+https://github.com/gardenlinux/python-gardenlinux-lib.git@2a27700198bc91e0f9b8321960ebc4709d65c41a
+          pip install git+https://github.com/gardenlinux/python-gardenlinux-lib.git@4da13c46b04d531d0bccfb5cb882f8581564af3b
           pip install -r requirements.txt
 
       - name: Run aggregate

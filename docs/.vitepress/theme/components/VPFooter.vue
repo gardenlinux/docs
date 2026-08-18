@@ -95,7 +95,7 @@ const projectName = title || "Garden Linux";
             {{ projectName }} is a project of the NeoNephos Foundation. For
             applicable policies including privacy policy, terms of use and
             trademark usage guidelines, please see
-            <a href="https://linuxfoundation.eu">https://linuxfoundation.eu</a>.
+            <a href="https://linuxfoundation.eu/policies">https://linuxfoundation.eu/policies</a>.
             Linux is a registered trademark of Linus Torvalds.
           </p>
         </div>
@@ -117,15 +117,6 @@ const projectName = title || "Garden Linux";
               class="netlify-logo" />
           </a>
         </div>
-      </div>
-
-      <!-- Row 3: Legal links (always last) -->
-      <div class="footer-legal-links">
-        <a href="/about/terms-of-use">Terms of Use</a>
-        <span class="footer-legal-sep">|</span>
-        <a href="/about/privacy">Privacy Statement</a>
-        <span class="footer-legal-sep">|</span>
-        <a href="/about/legal-disclosure">Legal Disclosure</a>
       </div>
     </div>
   </footer>
