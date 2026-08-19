@@ -1,0 +1,16 @@
+name: Netlify Deployment
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+concurrency:
+  group: netlify-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Trigger Netlify build hook
+        run: curl -X POST -d {} https://api.netlify.com/build_hooks/${{ secrets.NETLIFY_BUILD_HOOK }}
