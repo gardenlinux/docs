@@ -40,7 +40,7 @@
       "name": "package-build",
       "url": "https://github.com/gardenlinux/package-build",
       "ref": "main",
-      "commit": "c7ef3b1bc0eb03dc33cb9fc53ee5cb5a560d183d"
+      "commit": "a0a0a8d1dc83e04e037cd7da39e457a1145aa3bc"
     },
     {
       "name": "repo",
