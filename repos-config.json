@@ -3,8 +3,8 @@
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
-      "ref": "main",
-      "commit": "850e98843903a8708c15bf4784f505daf93a2c8e",
+      "ref": "docs/fix_glrd",
+      "commit": "ed2f458181277720c5cdf0f6e5af4fa085102bed",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
