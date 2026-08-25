@@ -168,7 +168,7 @@ Documents should:
 
 Documentation should be structured to minimize maintenance burden:
 
-- Follow the "single source of truth" principle; don't duplicate information
+- Follow the [single source of truth](/reference/adr/0038-public-by-default-documentation-policy) principle; don't duplicate information
   across multiple pages
 - Include version information where relevant
 - Clearly indicate ownership:
@@ -242,6 +242,11 @@ Use this checklist when reviewing or submitting documentation:
 - ✅ Breaking changes highlighted (if applicable)
 - ✅ Known issues section included (if applicable)
 - ✅ External dependencies documented (if applicable)
+
+## Architecture Decisions
+
+- [ADR 0038: Public-by-Default Documentation Policy](/reference/adr/0038-public-by-default-documentation-policy)
+  — the formal policy backing the single-source-of-truth and no-duplication maintainability markers.
 
 ## Related Topics
 
