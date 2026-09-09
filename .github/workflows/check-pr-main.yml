@@ -18,14 +18,14 @@ jobs:
           script: |
             const fs = require('fs');
             const config = JSON.parse(fs.readFileSync('repos-config.json', 'utf8'));
-            const ALLOWED_REFS = new Set(['main']);
+            const ALLOWED_REFS = new Set(['main','gh-pages']);
 
             const errors = [];
             for (const repo of config.repos) {
               const ref = repo.ref || '';
               const semverRegex = /^\d+\.\d+\.\d+$/;
               if (!ALLOWED_REFS.has(ref) && !semverRegex.test(ref)) {
-                errors.push(`  - ${repo.name}: ref='${ref}' (expected 'main' or a release version)`);
+                errors.push(`  - ${repo.name}: ref='${ref}' (expected 'main', 'gh-pages' or a release version)`);
               }
             }
 

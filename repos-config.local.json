@@ -43,6 +43,10 @@
     {
       "name": "gardenlinux-nvidia-installer",
       "url": "file://../gardenlinux-nvidia-installer"
+    },
+    {
+      "name": "daily",
+      "url": "file://../daily"
     }
   ]
 }
