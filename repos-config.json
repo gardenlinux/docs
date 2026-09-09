@@ -59,6 +59,12 @@
       "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
       "ref": "main",
       "commit": "7dd97a72be5e54cd8ba2e531c32c3a56e2e07fa0"
+    },
+    {
+      "name": "daily",
+      "url": "https://github.com/gardenlinux/daily",
+      "ref": "gh-pages",
+      "commit": "7a592fe86dc945aa78d2dd0177003ca2d94046a8"
     }
   ]
 }
