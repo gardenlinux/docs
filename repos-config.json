@@ -3,8 +3,8 @@
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
-      "ref": "main",
-      "commit": "850e98843903a8708c15bf4784f505daf93a2c8e",
+      "ref": "docs/adr/public_docs",
+      "commit": "d39bb3cad7b72aaeb20cf48d8378dc7b88e51e9c",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
