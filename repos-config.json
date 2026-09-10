@@ -4,7 +4,7 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "ref": "main",
-      "commit": "9d63619cc09edf7fa28b885df7f5298d0edef160",
+      "commit": "65a432ff7089e7481327243e332ee965de231cd0",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -52,7 +52,7 @@
       "name": "glrd",
       "url": "https://github.com/gardenlinux/glrd",
       "ref": "main",
-      "commit": "19cdb3af2c1f33fdf798ae37b14afa332e4186b8"
+      "commit": "1657ff751d2c5df66fbab7e183ae658ae110a5a0"
     },
     {
       "name": "gardenlinux-nvidia-installer",
