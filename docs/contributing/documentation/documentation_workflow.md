@@ -34,7 +34,7 @@ internal or external contributors, users or decision makers.
 
 In the context of this Documentation Hub, anything that has implication to the
 "outside". Meaning other users, operators, developers or decision makers needs
-to be documented accordingly.
+to be documented accordingly (see [ADR 0038](/reference/adr/0038-public-by-default-documentation-policy) for the full policy).
 
 This includes, but is not limited to:
 
@@ -46,7 +46,8 @@ This includes, but is not limited to:
 - Information about who is developing the project
 
 Of course this does not apply to purely internal changes like code cleanup
-contributions or similar that have no outside effect.
+contributions or similar that have no outside effect. For a precise definition
+of what qualifies as internal, see [ADR 0038](/reference/adr/0038-public-by-default-documentation-policy).
 
 ## Who Is Responsible for Maintaining Documentation?
 
@@ -143,8 +144,13 @@ The review validates:
 - **Style and Inclusivity**: Language follows the project's
   [quality criteria](./writing_good_docs.md), all images have appropriate alt
   text descriptions
-- **Maintainability**: Documentation follows single source of truth principle,
+- **Maintainability**: Documentation follows the [single source of truth](/reference/adr/0038-public-by-default-documentation-policy) principle,
   ownership is clear, no unnecessary duplication
+
+## Architecture Decisions
+
+- [ADR 0038: Public-by-Default Documentation Policy](/reference/adr/0038-public-by-default-documentation-policy)
+  — defines what must be public, what stays internal, and the delta-only model for internal supplements.
 
 ## Related Topics
 
