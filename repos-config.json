@@ -3,8 +3,8 @@
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
-      "ref": "main",
-      "commit": "65a432ff7089e7481327243e332ee965de231cd0",
+      "ref": "feat/stackit-platform",
+      "commit": "bb20afb43f8bbe5d3b74cbb6ae8b1fa9209d8aa6",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
