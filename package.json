@@ -9,6 +9,7 @@
     "docs:woke": "woke docs/"
   },
   "dependencies": {
+    "@floating-ui/vue": "^2.0.1",
     "autoprefixer": "10.4.0",
     "corepack": "^0.34.6",
     "gray-matter": "4.0.3",
