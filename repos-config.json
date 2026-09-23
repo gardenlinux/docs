@@ -4,7 +4,7 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "ref": "main",
-      "commit": "d2301d68dbc8114b4e545464aefdcba6adbbf29c",
+      "commit": "c15e9789b16b0e64019b52b45fb6fa3b3c0f608c",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
