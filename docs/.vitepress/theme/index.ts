@@ -8,6 +8,7 @@ import SectionIndex from './components/SectionIndex.vue'
 import RelatedTopics from './components/RelatedTopics.vue'
 import Carousel from './components/Carousel.vue'
 import VPFooter from './components/VPFooter.vue'
+import LinkPreviewProvider from './components/LinkPreviewProvider.vue'
 
 export default {
   extends: DefaultTheme,
@@ -30,8 +31,10 @@ export default {
       }
     )
 
-    return h(DefaultTheme.Layout, null, {
-      "layout-bottom": () => h(VPFooter),
+    return h(LinkPreviewProvider, null, {
+      default: () => h(DefaultTheme.Layout, null, {
+        "layout-bottom": () => h(VPFooter),
+      })
     })
   },
   enhanceApp({ app }) {
