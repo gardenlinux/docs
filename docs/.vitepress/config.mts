@@ -211,17 +211,12 @@ export default defineConfig({
     editLink: {
       pattern: ({ filePath, frontmatter }) => {
         // If page has GitHub metadata from aggregated content, use it
-        if (
-          frontmatter.github_org &&
-          frontmatter.github_repo &&
-          frontmatter.github_source_path
-        ) {
-          const branch = frontmatter.github_branch || "main";
-          const instance = ((frontmatter.github_instance as string | undefined) || "https://github.com").replace(/\/$/, "");
-          return `${instance}/${frontmatter.github_org}/${frontmatter.github_repo}/edit/${branch}/${frontmatter.github_source_path}`;
-        }
-        // Fallback for pages native to docs (no GitHub metadata)
-        return `https://github.com/gardenlinux/docs/edit/main/docs/${filePath}`;
+        const instance = ((frontmatter.github_instance as string | undefined) || "https://github.com").replace(/\/$/, "");
+        const github_org = frontmatter.github_org || "gardenlinux";
+        const github_repo = frontmatter.github_repo || "docs";
+        const branch = frontmatter.github_branch || "main";
+        const github_source_path = frontmatter.github_source_path || `docs/${filePath}`;
+        return `${instance}/${github_org}/${github_repo}/edit/${branch}/${github_source_path}`;
       },
       text: "Edit this page on GitHub",
     },
