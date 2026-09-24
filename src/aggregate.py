@@ -14,7 +14,6 @@ from pathlib import Path
 from aggregation import DocsFetcher, copy_targeted_docs, load_config, save_config
 from aggregation.flavor_matrix import generate_flavor_matrix_docs
 from aggregation.github_api import GitHubAPIError, list_repo_releases
-from aggregation.install_pins import sync_install_pins
 from aggregation.release_notes import generate_release_notes_docs
 from aggregation.releases import generate_release_docs
 from aggregation.structure import verify_internal_links
@@ -280,13 +279,6 @@ Examples:
 
             save_config(str(config_path), repos)
             print(f"\n✓ Config updated: {config_path}")
-
-            # Keep python-gardenlinux-lib install pins in sync with the lock so
-            # the aggregation environments install the same commit they document
-            # (see aggregation.install_pins for the full rationale).
-            pgl_commit = resolved_commits.get("python-gardenlinux-lib")
-            if pgl_commit:
-                sync_install_pins(project_root, pgl_commit)
 
         # Generate flavor matrix documentation after all repos are aggregated
         # Use the gardenlinux temp dir (still available inside the with block)
