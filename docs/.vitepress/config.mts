@@ -217,10 +217,11 @@ export default defineConfig({
           frontmatter.github_source_path
         ) {
           const branch = frontmatter.github_branch || "main";
-          return `https://github.com/${frontmatter.github_org}/${frontmatter.github_repo}/edit/${branch}/${frontmatter.github_source_path}`;
+          const instance = ((frontmatter.github_instance as string | undefined) || "https://github.com").replace(/\/$/, "");
+          return `${instance}/${frontmatter.github_org}/${frontmatter.github_repo}/edit/${branch}/${frontmatter.github_source_path}`;
         }
-        // Fallback for pages native to docs-ng (no GitHub metadata)
-        return `https://github.com/gardenlinux/docs-ng/edit/main/docs/${filePath}`;
+        // Fallback for pages native to docs (no GitHub metadata)
+        return `https://github.com/gardenlinux/docs/edit/main/docs/${filePath}`;
       },
       text: "Edit this page on GitHub",
     },
