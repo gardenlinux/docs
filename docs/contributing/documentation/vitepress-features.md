@@ -308,6 +308,10 @@ For content aggregated from external repositories, these fields enable proper pl
 
 Target location in the docs directory for aggregated content.
 
+**`github_instance`** (string, default: "https://github.com")
+
+Base URL of the GitHub instance.
+
 **`github_org`** (string)
 
 GitHub organization name.

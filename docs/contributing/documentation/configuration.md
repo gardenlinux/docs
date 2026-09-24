@@ -233,6 +233,7 @@ github_target_path: "docs/tutorials/my-tutorial.md"
 
 When using `github_target_path` for aggregated content, you can include additional metadata:
 
+- **`github_instance`**: Base URL of the GitHub instance (default: `"https://github.com"`).
 - **`github_org`**: Organization name (e.g., `"gardenlinux"`)
 - **`github_repo`**: Repository name (e.g., `"gardenlinux"`)
 - **`github_source_path`**: Original file path in source repo (e.g.,
