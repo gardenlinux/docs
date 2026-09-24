@@ -39,14 +39,6 @@ help:
 install:
 	@echo "Installing dependencies..."
 	pnpm install
-	pip install git+https://github.com/gardenlinux/glrd.git@v4.1.0
-	# Install python-gardenlinux-lib from the same commit the aggregation
-	# documents (see repos-config.json). This keeps the installed gardenlinux
-	# module in sync with the fetched source so Sphinx autodoc can import
-	# gardenlinux.* (e.g. oci -> podman, distro_version -> semver) and generate
-	# the CLI/API reference pages. Pinning an older release tag here drops
-	# those deps and breaks the python-gardenlinux-lib-cli reference.
-	pip install git+https://github.com/gardenlinux/python-gardenlinux-lib.git@4da13c46b04d531d0bccfb5cb882f8581564af3b
 	pip install -r requirements.txt
 
 # Documentation Aggregation

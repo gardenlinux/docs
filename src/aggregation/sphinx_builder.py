@@ -67,6 +67,29 @@ def build_sphinx_markdown(
 
     print(f"  [sphinx] Building Markdown documentation from {docs_source}")
 
+    # Step 0: Install the fetched repo so that transitive deps (e.g. podman,
+    # semver) required by the locked source are available to Sphinx autodoc.
+    # This ensures the installed package always exactly matches the locked
+    # source, regardless of what is pinned in requirements.txt.
+    print(f"  [sphinx] Installing package from fetched repo: {repo_dir}")
+    pip_result = subprocess.run(
+        [sys.executable, "-m", "pip", "install", str(repo_dir)],
+        capture_output=True,
+        text=True,
+    )
+    if pip_result.stdout:
+        for line in pip_result.stdout.splitlines():
+            print(f"  [sphinx]   {line}")
+    if pip_result.stderr:
+        for line in pip_result.stderr.splitlines():
+            print(f"  [sphinx]   {line}")
+    if pip_result.returncode != 0:
+        print(
+            f"  [sphinx] pip install failed (exit {pip_result.returncode})",
+            file=sys.stderr,
+        )
+        return False
+
     with tempfile.TemporaryDirectory() as tmp:
         build_dir = Path(tmp) / "build"
         build_dir.mkdir()
