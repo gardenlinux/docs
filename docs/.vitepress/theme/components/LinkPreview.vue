@@ -157,10 +157,15 @@ function parseGlossaryFromHtml(html: string, anchor: string): any {
 
 async function fetchPagePreview(href: string): Promise<any> {
   try {
+    const anchor = href.split('#')[1] || ''
     let cleanHref = href.split('#')[0]
     
     if (cleanHref.endsWith('.html')) {
       cleanHref = cleanHref.slice(0, -5)
+    }
+
+    if (cleanHref.endsWith('.md')) {
+      cleanHref = cleanHref.slice(0, -3)
     }
     
     // Try fetching markdown first (works in dev)
@@ -174,7 +179,7 @@ async function fetchPagePreview(href: string): Promise<any> {
     
     if (response.ok) {
       const markdown = await response.text()
-      return parsePageFromMarkdown(markdown)
+      return parsePageFromMarkdown(markdown, anchor)
     }
     
     // Production: fetch HTML and parse DOM
@@ -186,13 +191,65 @@ async function fetchPagePreview(href: string): Promise<any> {
     if (!response.ok) return null
     
     const html = await response.text()
-    return parsePageFromHtml(html)
+    return parsePageFromHtml(html, anchor)
   } catch {
     return null
   }
 }
 
-function parsePageFromMarkdown(markdown: string): any {
+function parsePageFromMarkdown(markdown: string, anchor = ''): any {
+  let inFence = false
+  if (anchor) {
+    const lines = markdown.split('\n')
+    let level = 0
+    let sectionTitle = ''
+    let sectionExcerpt = ''
+
+    for (const line of lines) {
+      // Check if we are in a fenced code block and skip heading search if so.
+      if(/^\s*(?:```|~~~)/.test(line)) {inFence = !inFence; continue}
+      if (inFence) continue
+      const h = line.match(/^(#{1,6})\s+(.+)$/)
+      if (h) {
+        const text = h[2].trim()
+        const slug = text.toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-')
+
+        if (!level) {
+          if (slug === anchor.toLowerCase()) {
+            level = h[1].length
+            sectionTitle = text
+          }
+          continue
+        }
+        if (h[1].length <= level) break
+        continue
+      }
+      // if (level && line.trim() && !line.startsWith('```') && !line.startsWith(':::')) {
+      //   sectionExcerpt += line + ' '
+      // }
+      if (level) {
+        if (!line.trim()) {
+          if (sectionExcerpt) break
+          continue
+        }
+        sectionExcerpt += line + ' '
+      }
+    }
+
+    if (sectionTitle) {
+      const fm = markdown.match(/^---\n([\s\S]*?)\n---/)
+      const desc = fm?.[1].match(/^description:\s*(.+)$/m)
+      return {
+        title: sectionTitle,
+        description: desc ? desc[1].replace(/^["']|["']$/g, '') : '',
+        excerpt: sectionExcerpt.trim()
+      }
+    }
+  }
+  // If no anchor was specified in the link, parse whole page.
   // Parse frontmatter (between --- and ---)
   const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---/)
   let title = ''
@@ -232,19 +289,54 @@ function parsePageFromMarkdown(markdown: string): any {
   return { title, description, excerpt }
 }
 
-function parsePageFromHtml(html: string): any {
-  const parser = new DOMParser()
-  const doc = parser.parseFromString(html, 'text/html')
-  
+function parsePageFromHtml(html: string, anchor = ''): any {
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+
+  const description =
+    doc.querySelector('meta[name="description"]')?.getAttribute('content') || ''
+
+  if (anchor) {
+    const heading = doc.getElementById(anchor)
+    if (heading && /^H[1-6]$/.test(heading.tagName)) {
+      const level = Number(heading.tagName.slice(1))
+      let excerpt = ''
+      let el = heading.nextElementSibling
+      while (el && !/^H[1-6]$/.test(el.tagName)) {
+        if (el.tagName === 'P') excerpt += el.textContent + ' '
+        el = el.nextElementSibling
+      }
+      // stop at the next heading at the same-or-higher level
+      const nextHeading = el
+      if (heading && /^H[1-6]$/.test(heading.tagName)) {
+        const level = Number(heading.tagName.slice(1))
+        let excerpt = ''
+        let el = heading.nextElementSibling
+        while (el) {
+          const elLevel = /^H[1-6]$/.test(el.tagName) ? Number(el.tagName.slice(1)) : null
+          if (elLevel !== null && elLevel <= level) break   // same-or-higher heading ends the section
+          if (el.tagName === 'P') excerpt += el.textContent + ' '
+          el = el.nextElementSibling
+      }
+      return {
+        title: heading.textContent?.replace(/\s*#$/, '').trim() || '',
+        description,
+        excerpt: excerpt.trim()
+      }
+    }
+      return {
+        title: heading.textContent?.replace(/\s*#$/, '').trim() || '',
+        description,
+        excerpt: excerpt.trim()
+      }
+    }
+  }
+
   // Extract title from h1 or title tag
   const h1 = doc.querySelector('h1')
   const title = h1?.textContent?.replace(/\s*#$/, '').trim() || 
                 doc.querySelector('title')?.textContent || ''
-  
-  // Try to find description from meta tag
-  const metaDescription = doc.querySelector('meta[name="description"]')
-  const description = metaDescription?.getAttribute('content') || ''
-  
+
+
   // Extract first paragraph from content
   const contentDiv = doc.querySelector('.vp-doc')
   const firstP = contentDiv?.querySelector('p')
