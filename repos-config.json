@@ -22,8 +22,8 @@
     {
       "name": "python-gardenlinux-lib",
       "url": "https://github.com/gardenlinux/python-gardenlinux-lib",
-      "ref": "main",
-      "commit": "4da13c46b04d531d0bccfb5cb882f8581564af3b",
+      "ref": "feature/adr34",
+      "commit": "b1d55ca51a98e3b413c0d657040d788d602da041",
       "structure": "sphinx",
       "target_map": {
         "cli.md": "reference/python-gardenlinux-lib-cli.md",
