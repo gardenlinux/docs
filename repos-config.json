@@ -3,8 +3,8 @@
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
-      "ref": "main",
-      "commit": "b17120a9cf1254185977fb76d224de4906ec0463",
+      "ref": "chore/cleanup_unused_features",
+      "commit": "e20e4e23d522a10250d2eb38b9753c32ed8d3a5f",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
