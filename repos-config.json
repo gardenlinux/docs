@@ -4,7 +4,7 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "ref": "main",
-      "commit": "b17120a9cf1254185977fb76d224de4906ec0463",
+      "commit": "5e66175e0e727e939115f5f462d7a4e5554f484f",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -17,7 +17,7 @@
       "name": "builder",
       "url": "https://github.com/gardenlinux/builder",
       "ref": "main",
-      "commit": "0196add0ce875ac0b7721c19b2ee3ac37cf84387"
+      "commit": "5a3f9ca1003f171379ddf060ab274a7136304f42"
     },
     {
       "name": "python-gardenlinux-lib",

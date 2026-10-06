@@ -164,10 +164,6 @@ Federal Risk and Authorization Management Program. Garden Linux provides an opti
 
 Federal Information Processing Standards. The [`_fips`](/reference/features/_fips) feature enables FIPS 140-2/140-3 cryptographic module compliance in Garden Linux.
 
-### Firecracker
-
-A lightweight virtual machine monitor (VMM) for running microVMs. Garden Linux historically supported Firecracker as a platform. See [ADR-0012](./adr/0012-remove-firecracker-feature.md) for details on why Firecracker support was discontinued.
-
 ### Flag
 
 A feature of type `flag` represents a lightweight modifier. Flags are identified by a leading underscore (`_`) in their name (e.g., `_prod`, `_fips`, `_trustedboot`). They are intended for minor behavioral changes that do not warrant a full element and should not include other features. See [ADR 0034](/reference/adr/0034-feature-terminology) for the authoritative definition.
@@ -372,7 +368,7 @@ An OpenJDK release maintained and supported by SAP. Garden Linux provides `sapma
 
 ### Secure Boot
 
-A security feature that ensures only trusted software can boot on a system by verifying digital signatures. Garden Linux supports Secure Boot through the [`_secureboot`](/reference/features/_secureboot) feature. See [ADR-0005](./adr/0005-secure-boot-keys-glci.md) for details on Secure Boot keys in GLCI, and the [Secure Boot documentation](/how-to/secure-boot.md) for usage details.
+A security feature that ensures only trusted software can boot on a system by verifying digital signatures. Garden Linux supports Secure Boot through the [`_trustedboot`](/reference/features/_trustedboot) feature. See [ADR-0005](./adr/0005-secure-boot-keys-glci.md) for details on Secure Boot keys in GLCI, and the [Secure Boot documentation](/how-to/secure-boot.md) for usage details.
 
 ### SELinux
 
