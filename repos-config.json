@@ -3,8 +3,8 @@
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
-      "ref": "main",
-      "commit": "5e66175e0e727e939115f5f462d7a4e5554f484f",
+      "ref": "feature/enable_fips_adr",
+      "commit": "eb9042d257d84e756afd5d5c5dd18912ccc0aa40",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
