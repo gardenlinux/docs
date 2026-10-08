@@ -68,7 +68,7 @@ watch(
     } else {
       content.value = await fetchPagePreview(href)
     }
-  }, 
+  },
   { immediate: true }
 )
 
@@ -78,16 +78,16 @@ async function fetchGlossaryTerm(anchor: string): Promise<any> {
     let response = await fetch('/reference/glossary.md', {
       headers: { 'Accept': 'text/plain, text/markdown' }
     })
-    
+
     if (response.ok) {
       const markdown = await response.text()
       return parseGlossaryFromMarkdown(markdown, anchor)
     }
-    
+
     // Production: fetch HTML and parse DOM
     response = await fetch('/reference/glossary.html')
     if (!response.ok) return null
-    
+
     const html = await response.text()
     return parseGlossaryFromHtml(html, anchor)
   } catch {
@@ -100,18 +100,18 @@ function parseGlossaryFromMarkdown(markdown: string, anchor: string): any {
   let foundHeading = false
   let title = ''
   let excerpt = ''
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
-    
+
     if (line.startsWith('### ')) {
       const headingText = line.replace('### ', '').trim()
       const generatedAnchor = headingText
         .toLowerCase()
-        .replace(/[^\w\s-]/g, '')
+        .replace(/[^\ws-]/g, '-')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
-      
+
       if (generatedAnchor === anchor || headingText.toLowerCase().includes(anchor.replace(/-/g, ' '))) {
         foundHeading = true
         title = headingText
@@ -120,12 +120,12 @@ function parseGlossaryFromMarkdown(markdown: string, anchor: string): any {
         break
       }
     }
-    
+
     if (foundHeading && line.trim() && !line.startsWith('#')) {
       excerpt += line + ' '
     }
   }
-  
+
   if (!title) return null
   return { title, excerpt: excerpt.trim() }
 }
@@ -133,14 +133,14 @@ function parseGlossaryFromMarkdown(markdown: string, anchor: string): any {
 function parseGlossaryFromHtml(html: string, anchor: string): any {
   const parser = new DOMParser()
   const doc = parser.parseFromString(html, 'text/html')
-  
+
   // Find the heading with matching id
   const heading = doc.querySelector(`h3#${anchor}`)
   if (!heading) return null
-  
+
   // Extract title (remove the anchor link if present)
   const title = heading.textContent?.replace(/\s*#$/, '').trim() || ''
-  
+
   // Get content until next heading
   let excerpt = ''
   let nextElement = heading.nextElementSibling
@@ -150,7 +150,7 @@ function parseGlossaryFromHtml(html: string, anchor: string): any {
     }
     nextElement = nextElement.nextElementSibling
   }
-  
+
   if (!title) return null
   return { title, excerpt: excerpt.trim() }
 }
@@ -159,7 +159,7 @@ async function fetchPagePreview(href: string): Promise<any> {
   try {
     const anchor = href.split('#')[1] || ''
     let cleanHref = href.split('#')[0]
-    
+
     if (cleanHref.endsWith('.html')) {
       cleanHref = cleanHref.slice(0, -5)
     }
@@ -167,29 +167,29 @@ async function fetchPagePreview(href: string): Promise<any> {
     if (cleanHref.endsWith('.md')) {
       cleanHref = cleanHref.slice(0, -3)
     }
-    
+
     // Try fetching markdown first (works in dev)
-    const mdPath = cleanHref.endsWith('/') 
-      ? `${cleanHref}index.md` 
+    const mdPath = cleanHref.endsWith('/')
+      ? `${cleanHref}index.md`
       : `${cleanHref}.md`
-    
+
     let response = await fetch(mdPath, {
       headers: { 'Accept': 'text/plain, text/markdown' }
     })
-    
+
     if (response.ok) {
       const markdown = await response.text()
       return parsePageFromMarkdown(markdown, anchor)
     }
-    
+
     // Production: fetch HTML and parse DOM
-    const htmlPath = cleanHref.endsWith('/') 
-      ? `${cleanHref}index.html` 
+    const htmlPath = cleanHref.endsWith('/')
+      ? `${cleanHref}index.html`
       : `${cleanHref}.html`
-    
+
     response = await fetch(htmlPath)
     if (!response.ok) return null
-    
+
     const html = await response.text()
     return parsePageFromHtml(html, anchor)
   } catch {
@@ -213,9 +213,10 @@ function parsePageFromMarkdown(markdown: string, anchor = ''): any {
       if (h) {
         const text = h[2].trim()
         const slug = text.toLowerCase()
-          .replace(/[^\w\s-]/g, '')
+          .replace(/[^\w\s-]/g, '-')
           .replace(/\s+/g, '-')
           .replace(/-+/g, '-')
+          .replace(/^-|-$/g, '')
 
         if (!level) {
           if (slug === anchor.toLowerCase()) {
@@ -254,7 +255,7 @@ function parsePageFromMarkdown(markdown: string, anchor = ''): any {
   const frontmatterMatch = markdown.match(/^---\n([\s\S]*?)\n---/)
   let title = ''
   let description = ''
-  
+
   if (frontmatterMatch) {
     const frontmatter = frontmatterMatch[1]
     const titleMatch = frontmatter.match(/^title:\s*(.+)$/m)
@@ -262,13 +263,13 @@ function parsePageFromMarkdown(markdown: string, anchor = ''): any {
     if (titleMatch) title = titleMatch[1].replace(/^["']|["']$/g, '')
     if (descMatch) description = descMatch[1].replace(/^["']|["']$/g, '')
   }
-  
+
   // Extract first paragraph after frontmatter
-  const contentStart = frontmatterMatch 
-    ? markdown.indexOf('---', 4) + 3 
+  const contentStart = frontmatterMatch
+    ? markdown.indexOf('---', 4) + 3
     : 0
   const content = markdown.slice(contentStart).trim()
-  
+
   // Find first paragraph (skip headings)
   const lines = content.split('\n')
   let excerpt = ''
@@ -279,13 +280,13 @@ function parsePageFromMarkdown(markdown: string, anchor = ''): any {
       break
     }
   }
-  
+
   // If no title from frontmatter, try to get from first h1
   if (!title) {
     const h1Match = content.match(/^#\s+(.+)$/m)
     if (h1Match) title = h1Match[1]
   }
-  
+
   return { title, description, excerpt }
 }
 
@@ -333,7 +334,7 @@ function parsePageFromHtml(html: string, anchor = ''): any {
 
   // Extract title from h1 or title tag
   const h1 = doc.querySelector('h1')
-  const title = h1?.textContent?.replace(/\s*#$/, '').trim() || 
+  const title = h1?.textContent?.replace(/\s*#$/, '').trim() ||
                 doc.querySelector('title')?.textContent || ''
 
 
@@ -341,7 +342,7 @@ function parsePageFromHtml(html: string, anchor = ''): any {
   const contentDiv = doc.querySelector('.vp-doc')
   const firstP = contentDiv?.querySelector('p')
   const excerpt = firstP?.textContent || ''
-  
+
   return { title, description, excerpt }
 }
 </script>
