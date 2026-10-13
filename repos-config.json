@@ -3,8 +3,8 @@
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
-      "ref": "main",
-      "commit": "5e66175e0e727e939115f5f462d7a4e5554f484f",
+      "ref": "docs/features",
+      "commit": "c86e804994c35325ca0eee4b0f14db56e77514ca",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -16,8 +16,8 @@
     {
       "name": "builder",
       "url": "https://github.com/gardenlinux/builder",
-      "ref": "main",
-      "commit": "5a3f9ca1003f171379ddf060ab274a7136304f42"
+      "ref": "docs/glossary_after_features",
+      "commit": "0f1d0bfb6ce34ef79b49966cef5428a658e241f5"
     },
     {
       "name": "python-gardenlinux-lib",
