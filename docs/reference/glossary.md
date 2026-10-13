@@ -7,11 +7,15 @@ order: 1
 
 This glossary provides definitions for Garden Linux-specific terminology. To contribute additional terms or improve existing definitions, visit our [contributing guide](../contributing/index.md).
 
-**Jump to:** [A](#a) · [B](#b) · [C](#c) · [D](#d) · [E](#e) · [F](#f) · [G](#g) · [I](#i) · [K](#k) · [L](#l) · [M](#m) · [N](#n) · [O](#o) · [P](#p) · [R](#r) · [S](#s) · [T](#t) · [U](#u) · [V](#v)
+**Jump to:** [A](#a) · [B](#b) · [C](#c) · [D](#d) · [E](#e) · [F](#f) · [G](#g) · [I](#i) · [K](#k) · [L](#l) · [M](#m) · [N](#n) · [O](#o) · [P](#p) · [Q](#q) · [R](#r) · [S](#s) · [T](#t) · [U](#u) · [V](#v)
 
 ---
 
 ## A
+
+### Alibaba Cloud (Aliyun)
+
+A major cloud platform supported by Garden Linux through the [`ali`](/reference/features/ali) platform feature. Alibaba Cloud is the cloud computing arm of Alibaba Group. Garden Linux delivers artifacts for Alibaba Cloud as `.raw` and `.qcow2` files.
 
 ### ADR (Architecture Decision Record)
 
@@ -65,7 +69,7 @@ A **versioned flavor** is the flavor qualified with a version — the string pas
 
 Example: `aws-gardener_prod-amd64-1877.3`. See [ADR 0035](/reference/adr/0035-cname-flavor-artifact-naming) for the authoritative definition.
 
-Partial arguments are accepted. You can pass any subset of the full [naming hierarchy](/reference/flavors#canonical-names):
+Partial arguments are accepted. You can pass any subset of the full [feature list](/reference/flavors#feature-list):
 a bare cname (e.g. `aws-gardener_prod`), a flavor (cname + arch, e.g.
 `aws-gardener_prod-amd64`), or a versioned flavor (flavor + version, e.g.
 `aws-gardener_prod-amd64-1877.3`). Any missing component is resolved
@@ -75,6 +79,10 @@ read from the `VERSION` file via `./get_version`.
 ---
 
 ## C
+
+### ClamAV (Antivirus)
+
+An open-source antivirus engine. Garden Linux provides ClamAV support through the [`clamav`](/reference/features/clamav) element feature, which installs and configures the ClamAV daemon for on-access and scheduled scanning.
 
 ### CIS (Center for Internet Security)
 
@@ -116,6 +124,14 @@ An industry-standard container runtime that manages the lifecycle of containers 
 
 The upstream Linux distribution on which Garden Linux is based. Garden Linux is a Debian GNU/Linux derivative that provides customized, auditable images with a focus on cloud and security features.
 
+### Defense Information Systems Agency (DISA)
+
+The United States Defense Information Systems Agency. DISA develops and publishes Security Technical Implementation Guides (STIGs) for hardening operating systems and applications. Garden Linux provides DISA STIG compliance through the [`stig`](/reference/features/stig), [`stigDev`](/reference/features/stigDev), [`disaSTIGlow`](/reference/features/disaSTIGlow), and [`disaSTIGmedium`](/reference/features/disaSTIGmedium) features. See also [**Security Technical Implementation Guide (STIG)**](#security-technical-implementation-guide-stig).
+
+### Docker
+
+A platform for building, sharing, and running containerized applications. Docker uses OCI-compatible container images. Garden Linux container images are compatible with Docker and other OCI-compliant runtimes. See also [**OCI (OCI Image Format)**](#oci-oci-image-format) and [**containerd**](#containerd).
+
 ### debootstrap
 
 A tool that installs a Debian base system into a subdirectory of another, already installed system. The Garden Linux builder uses `debootstrap` to create the initial root filesystem for every image, bootstrapping the `minbase` variant as the foundation for the [`base`](/reference/features/base) feature layer.
@@ -136,6 +152,10 @@ The initramfs infrastructure used by Garden Linux to generate the initial RAM fi
 
 ## E
 
+### EFI System Partition (ESP)
+
+A partition on a storage device used by Unified Extensible Firmware Interface (UEFI) firmware to store bootloaders and other files needed during startup. Garden Linux images for UEFI-capable platforms include an EFI System Partition containing the bootloader and, when Secure Boot or Trusted Boot is enabled, signed kernel images.
+
 ### Element
 
 A feature of type `element` represents a functional component or capability added on top of a platform feature. Elements are composable — multiple elements may be present in a single build. Examples: `cis`, `fedramp`, `firewall`, `gardener`, `metal`, `server`. See [ADR 0034](/reference/adr/0034-feature-terminology) for the authoritative definition.
@@ -143,6 +163,10 @@ A feature of type `element` represents a functional component or capability adde
 ### Ephemeral
 
 Refers to the [`_ephemeral`](/reference/features/_ephemeral) feature that configures Garden Linux for stateless operation where no persistent state is maintained between reboots.
+
+### EROFS (Enhanced Read-Only File System)
+
+A lightweight, compressed, read-only Linux filesystem. Garden Linux uses EROFS to embed the root filesystem in USI images (Unified System Images), where the root disk is included directly inside the Unified Kernel Image. See [**USI (Unified System Image)**](#usi-unified-system-image).
 
 ---
 
@@ -156,11 +180,11 @@ A modular component that adds specific functionality to a Garden Linux image. Fe
 
 The **feature set** of a build is the complete set of features present after dependency graph resolution — the transitive closure of all included features minus all excluded ones. The **minimal feature set** is the subset of the feature set whose members are not pulled in transitively by any other selected feature; the [cname](#cname-canonical-name) is derived from this minimal set. See [ADR 0034](/reference/adr/0034-feature-terminology) and [ADR 0035](/reference/adr/0035-cname-flavor-artifact-naming) for details.
 
-### FedRAMP
+### Federal Risk and Authorization Management Program (FedRAMP)
 
 Federal Risk and Authorization Management Program. Garden Linux provides an optional [`fedramp`](/reference/features/fedramp) feature for US federal compliance requirements.
 
-### FIPS
+### Federal Information Processing Standard (FIPS)
 
 Federal Information Processing Standards. The [`_fips`](/reference/features/_fips) feature enables FIPS 140-2/140-3 cryptographic module compliance in Garden Linux.
 
@@ -206,6 +230,10 @@ The `GARDENLINUX_PLATFORM` key in `/etc/os-release`. It contains the single auth
 
 Google Cloud Platform. A major cloud platform supported by Garden Linux through the [`gcp`](/reference/features/gcp) platform feature with platform-specific configurations. See [GCP platform guide](/how-to/installation/cloud/gcp.md) and [GCP first boot tutorial](../tutorials/cloud/first-boot-gcp.md) for usage details.
 
+### GDCH
+
+Google Distributed Cloud Hosted. A managed infrastructure service that runs Google Cloud services on-premises in customer data centers. Garden Linux provides a platform feature ([`gdch`](/reference/features/gdch)) targeting GDCH deployments.
+
 ### GitHub Actions
 
 GitHub's continuous integration and deployment platform. Garden Linux uses GitHub Actions for automated testing and building. See [ADR-0028](./adr/0028-pin-actions-to-sha.md) for the decision to pin GitHub Actions to specific SHA hashes for security and reproducibility.
@@ -230,6 +258,10 @@ Garden Linux uses Go for various tools and components. See [ADR-0004](./adr/0004
 
 ## I
 
+### Ignition
+
+A provisioning tool that configures systems on first boot by processing a declarative JSON configuration file. Ignition can create users, write files, format disks, and configure network settings. Garden Linux supports Ignition for first-boot configuration through the `ignition` feature (v3+) and the `ignition-legacy` feature (v2, used with the [`capi`](/reference/features/capi) feature for Kubernetes Cluster API). See [Ignition documentation](https://coreos.github.io/ignition/).
+
 ### Immutable
 
 Refers to the optional immutable image feature where the root filesystem is read-only to prevent modifications and ensure system integrity.
@@ -237,6 +269,14 @@ Refers to the optional immutable image feature where the root filesystem is read
 ### initramfs
 
 Initial RAM filesystem. Garden Linux uses dracut to generate the initramfs, which is loaded by the kernel during the boot process before mounting the root filesystem.
+
+### IronCore
+
+A cloud platform by SAP for running Kubernetes workloads in a network-isolated environment. Garden Linux provides a platform feature ([`metal`](/reference/features/metal)) used in IronCore deployments, commonly combined with the [`capi`](/reference/features/capi) feature for Kubernetes Cluster API integration.
+
+### iSCSI
+
+Internet Small Computer Systems Interface. A storage networking protocol that enables block-level access to storage devices over IP networks. Garden Linux provides iSCSI support through the [`iscsi`](/reference/features/iscsi) element feature.
 
 ---
 
@@ -250,6 +290,10 @@ Garden Linux runs the latest Long Term Support (LTS) kernel from the Linux kerne
 
 The [`khost`](/reference/features/khost) element feature adjusts Garden Linux to support running vanilla (non-Gardener) Kubernetes workloads. It extends the [`chost`](/reference/features/chost) feature with `kubelet` configuration, `sysctl` tuning, and swap removal. See [**chost (Container Host)**](#chost-container-host).
 
+### Kubernetes
+
+An open-source system for automating deployment, scaling, and management of containerized applications. Garden Linux is the recommended operating system for Kubernetes worker nodes in Gardener-managed clusters, delivered through the [`gardener`](/reference/features/gardener) and [`khost`](/reference/features/khost) features. See [Kubernetes documentation](https://kubernetes.io/) for more details.
+
 ### KVM
 
 Kernel-based Virtual Machine. A Linux kernel module that provides hardware virtualization capabilities. The [`kvm`](/reference/features/kvm) platform feature is a common target for Garden Linux images used in virtualized environments.
@@ -258,7 +302,11 @@ Kernel-based Virtual Machine. A Linux kernel module that provides hardware virtu
 
 ## L
 
-### Lima (Linux Machines)
+### libvirt
+
+A toolkit and API for managing virtualization platforms. libvirt supports KVM, QEMU, and other hypervisors. The [`vhost`](/reference/features/vhost) element feature in Garden Linux integrates with libvirt-based environments. See [libvirt documentation](https://libvirt.org/) for more details.
+
+### Lima
 
 A tool for running Linux virtual machines on macOS and Linux hosts. Garden Linux provides official Lima images that can be launched with `limactl`. See [ADR-0023](./adr/0023-lima-image-download.md) for details on Lima image download mechanisms and [ADR-0024](./adr/0024-promote-lima-image-to-official.md) for the decision to promote Lima images to official status. Also see [Lima documentation](https://lima-vm.io) for more details.
 
@@ -326,6 +374,10 @@ The [gardenlinux/package-build](https://github.com/gardenlinux/package-build) re
 
 The third number in Garden Linux's semantic versioning scheme (e.g., the "0" in "2017.0.0"). Patch versions contain backwards-compatible bug fixes and security updates. See [ADR-0011](./adr/0011-garden-linux-versioning.md) for details.
 
+### Platform Configuration Registers (PCRs)
+
+Registers within a Trusted Platform Module (TPM) that store hash measurements of system components during the boot process. PCR values are used to verify system integrity and can be used to seal encryption keys to a specific boot state. Garden Linux leverages PCRs with the [`_tpm2`](/reference/features/_tpm2) and [`_trustedboot`](/reference/features/_trustedboot) features. See also [**TPM2**](#tpm2) and [**Trusted Boot**](#trusted-boot).
+
 ### Platform
 
 A feature of type `platform` represents the deployment target — the combination of hardware, firmware, and cloud or hypervisor environment the image is intended to run on. A well-formed build must contain exactly one platform feature. Examples: `aws`, `azure`, `baremetal`, `container`, `gcp`, `kvm`. The single authoritative platform identifier for a running image is available in `GARDENLINUX_PLATFORM` in `/etc/os-release`. See [ADR 0034](/reference/adr/0034-feature-terminology) for the authoritative definition, [ADR-0020](./adr/0020-enforce-single-platform-by-default-in-builder.md) for the single-platform enforcement rule, and [**GARDENLINUX_PLATFORM**](#gardenlinux_platform).
@@ -344,7 +396,19 @@ The [python-gardenlinux-lib](https://github.com/gardenlinux/python-gardenlinux-l
 
 ---
 
+## Q
+
+### QEMU
+
+Quick Emulator. An open-source machine emulator and virtualizer. QEMU is commonly used with KVM to run Garden Linux virtual machines on Linux hosts. The [`kvm`](/reference/features/kvm) platform feature targets KVM/QEMU environments. See [QEMU documentation](https://www.qemu.org/) for more details.
+
+---
+
 ## R
+
+### Region
+
+A geographic area containing one or more data centers in a cloud provider's infrastructure. Cloud providers such as AWS, Azure, and GCP organize their resources into regions. Garden Linux images are published to multiple regions as part of the release process. AMI IDs, for example, are region-specific: each AWS region has its own AMI ID for the same image.
 
 ### Release
 
@@ -366,6 +430,10 @@ Running Podman without requiring root privileges. Garden Linux builds use rootle
 
 An OpenJDK release maintained and supported by SAP. Garden Linux provides `sapmachine` as the [`sapmachine`](/reference/features/sapmachine) element feature, which installs the SapMachine Java runtime. The feature depends on [`_curl`](/reference/features/_curl) for package retrieval. See [SapMachine project](https://sap.github.io/SapMachine/).
 
+### SAP Converged Cloud
+
+An on-premises cloud infrastructure platform operated by SAP, based on OpenStack. Garden Linux provides a platform feature ([`openstack`](/reference/features/openstack)) used in SAP Converged Cloud deployments. See also [**OpenStack**](#openstack).
+
 ### Secure Boot
 
 A security feature that ensures only trusted software can boot on a system by verifying digital signatures. Garden Linux supports Secure Boot through the [`_trustedboot`](/reference/features/_trustedboot) feature. See [ADR-0005](./adr/0005-secure-boot-keys-glci.md) for details on Secure Boot keys in GLCI, and the [Secure Boot documentation](/how-to/secure-boot.md) for usage details.
@@ -378,9 +446,13 @@ Security-Enhanced Linux. An optional security feature available through the [`_s
 
 Semantic Versioning. Garden Linux follows the semver specification (MAJOR.MINOR.PATCH) starting with version 2017.0.0. See [ADR-0011](./adr/0011-garden-linux-versioning.md) for the complete versioning strategy and [semver.org](https://semver.org/) for the specification.
 
-### STIG
+### STACKIT
 
-Security Technical Implementation Guide. Garden Linux provides optional STIG compliance through the [`stig`](/reference/features/stig) and [`stigDev`](/reference/features/stigDev) features, based on DISA (Defense Information Systems Agency) security standards.
+A cloud platform by Schwarz Group (parent company of Lidl and Kaufland). Garden Linux provides a platform feature ([`stackit`](/reference/features/stackit)) targeting STACKIT deployments.
+
+### Security Technical Implementation Guide (STIG)
+
+Security Technical Implementation Guide. Garden Linux provides optional STIG compliance through the [`stig`](/reference/features/stig) and [`stigDev`](/reference/features/stigDev) features, based on DISA (Defense Information Systems Agency) security standards. See also [**Defense Information Systems Agency (DISA)**](#defense-information-systems-agency-disa).
 
 ### systemd
 
@@ -393,6 +465,10 @@ The system and service manager used by Garden Linux. Garden Linux is purely syst
 ### tests
 
 The testing framework used by Garden Linux for system testing. See [ADR-0006](./adr/0006-new-test-framework-in-place-self-contained-test-execution.md) (new test framework), [ADR-0007](./adr/0007-non-invasive-read-only-testing.md) (non-invasive testing), [ADR-0008](./adr/0008-unified-and-declarative-test-logic.md) (unified test logic), [ADR-0010](./adr/0010-incremental-migration-and-coexistence-of-tests.md) (incremental migration), [ADR-0016](./adr/0016-minimal-host-dependencies-for-test-ng.md) (minimal host dependencies), [ADR-0021](./adr/0021-use-of-tiger-tool-in-tests-ng.md) (tiger tool usage), [ADR-0022](./adr/0022-test-ng-system-state-diffing.md) (system state diffing), and [ADR-0026](./adr/0026-test-ng-when-to-parsers.md) (when-to parsers) for details on the test-ng architecture and design decisions.
+
+### tests-ng
+
+The next-generation Garden Linux test framework. `tests-ng` uses pytest and OpenTofu to run declarative system tests against Garden Linux images across platforms. It supersedes the older `tests` framework. See [Testing reference](/reference/testing/) for full documentation and [**tests**](#tests) for the earlier framework context.
 
 ### TPM2
 

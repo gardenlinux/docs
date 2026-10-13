@@ -5,10 +5,44 @@
 # Setting to 'error' will hide [WARN] messages
 verbose = "error"
 
+# Resolve extensionless local links (VitePress style) by appending .md
+fallback_extensions = ["md"]
+
+# Enable anchor fragment checking for local files
+include_fragments = "anchor-only"
+
 # Exclude patterns
 exclude = [
-  "^/",
-  "^file://",
+  # VitePress uses a different anchor slug algorithm from GFM for headings that
+  # contain backtick spans (code) or inline links. These patterns suppress false
+  # positives where the anchor is valid in VitePress but not resolvable by lychee.
+  # features/index.md headings with backtick spans, e.g.
+  #   ## `exec.config`, `exec.early`, `exec.late`, `exec.post`
+  # VitePress slug: exec-config-exec-early-exec-late-exec-post
+  # lychee/GFM slug: execconfig-execearly-execlate-execpost  (dots stripped, no hyphens)
+  "file://.*reference/features#",
+  # explanation/github-workflows.md has headings that are inline links, e.g.
+  #   ## [nightly.yml](https://...)
+  # VitePress slug: nightly-yml; lychee/GFM slug: nightlyyml
+  "file://.*explanation/github-workflows#",
+  # .html links are VitePress output URLs (not source files); skip existence check
+  "file://.*\\.html($|#)",
+  # Pages that are referenced but not yet published in this repo
+  # (present in docs-ng-internal or planned for a future PR):
+  "file://.*explanation/infrastructure",
+  "file://.*how-to/troubleshooting",
+  "file://.*releases/apt-repositories",
+  "file://.*releases/major-patch-releases",
+  # bare and libc feature pages are not yet documented; exclude until pages exist
+  "file://.*reference/features/bare",
+  "file://.*reference/features/libc\\.md",
+  # VitePress dark/light mode image syntax uses #light-mode-only / #dark-mode-only
+  # fragments that are not real SVG anchors; the image files themselves exist.
+  "file://.*\\.svg#(light|dark)-mode-only$",
+  # FIRST.org CVSS document uses client-side rendered anchors not visible to lychee
+  "^https://www\\.first\\.org/cvss/specification-document#",
+  # GitHub Actions workflow URLs return 503 intermittently during CI
+  "^https://github\\.com/gardenlinux/gardenlinux/blob/main/\\.github/workflows/",
   # Legacy docs that reference non-existent GitHub paths
   "^https://github\\.com/gardenlinux/gardenlinux/blob/main/legacy/",
   "^https://github\\.com/gardenlinux/gardenlinux/blob/main/tests/README($|#)",
