@@ -63,8 +63,8 @@
     {
       "name": "daily",
       "url": "https://github.com/gardenlinux/daily",
-      "ref": "gh-pages",
-      "commit": "395ade245a410907c6ef93bc0c681102facb34e2"
+      "ref": "feat/pr_gates",
+      "commit": "4e6204e317349d65043f826fa25f93ddea8f4c3f"
     }
   ]
 }
