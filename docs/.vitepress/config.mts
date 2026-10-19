@@ -98,16 +98,11 @@ export default defineConfig({
     // Ignore LICENSE files (e.g. from aggregated repos)
     /LICENSE$/,
     // Ignore broken links inside features for now
-    /features\/_ephemeral/,
-    /features\/_tpm2/,
     /features\/bare/,
     /features\/libc/,
     /test\//,
     /tests\//,
     /samples\//,
-    /boot_modes/,
-    /cis\//,
-    /firewall\//,
   ],
   head: [
     [
