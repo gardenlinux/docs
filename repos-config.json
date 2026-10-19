@@ -52,7 +52,7 @@
       "name": "glrd",
       "url": "https://github.com/gardenlinux/glrd",
       "ref": "main",
-      "commit": "1657ff751d2c5df66fbab7e183ae658ae110a5a0"
+      "commit": "9af61e86b22635588b57765342fb54fedc1d05e0"
     },
     {
       "name": "gardenlinux-nvidia-installer",
