@@ -51,10 +51,12 @@ can detect merged PRs.
 
 ### Jobs
 
-| Job              | Condition                                                                         | Purpose                                                                     |
-| ---------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `docs-checks`    | Skipped when `action == 'closed'`                                                 | Calls the reusable quality-check workflow in `docs` with override inputs |
-| `notify-docs` | Runs after `docs-checks` succeeds **or** when a PR is merged (always-conditional) | Generates a GitHub App token and sends a `repository_dispatch` to `docs` |
+| Job                  | Condition                                                                              | Purpose                                                                     |
+| -------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `detect-changes`     | Skipped on `action == 'closed'`                                                       | Detects whether documentation-relevant paths changed |
+| `docs-checks`        | Skipped when `action == 'closed'`                                                     | Calls the reusable quality-check workflow in `docs` with override inputs |
+| `docs-checks-gate`   | `if: always()`, skipped on `action == 'closed'`                                       | Status-check gate — always reports success or failure so branch protection rules can reference it |
+| `notify-docs`        | Runs after `docs-checks` succeeds **or** when a PR is merged (always-conditional)     | Generates a GitHub App token and sends a `repository_dispatch` to `docs` |
 
 ### Inputs Passed to Reusable Workflow
 
@@ -95,17 +97,21 @@ can detect merged PRs.
 ```mermaid
 flowchart TD
     A["PR event on docs paths"] --> B{action == closed?}
-    B -->|no| C["docs-checks job<br/>(calls docs-checks.yml @ docs)"]
+    B -->|no| DC["detect-changes job"]
+    DC -->|docs changed| C["docs-checks job<br/>(calls docs-checks.yml @ docs)"]
+    DC -->|docs not changed| GATE
     C -->|success| D["notify-docs job"]
+    C --> GATE
     B -->|yes, merged| D
     B -->|yes, not merged| E["workflow ends<br/>(no action)"]
     D --> F["repository_dispatch → docs<br/>event_type: docs-pr"]
+    GATE["docs-checks-gate<br/>(if: always())<br/>skip → pass / fail → fail"]
 
     class A input
     class C,D process
-    class B decision
+    class B,DC decision
     class E process
-    class F output
+    class F,GATE output
 ```
 
 ### Common Failure Causes
@@ -115,6 +121,53 @@ flowchart TD
 | `docs-checks` job fails    | Broken links, spelling errors, or woke violations in the documentation change                      |
 | `notify-docs` job fails | `DOCS_BOT_APP_ID` or `DOCS_BOT_PRIVATE_KEY` secret missing/invalid; App not installed on `docs` |
 | Workflow not triggered     | Changed files do not match the `paths:` filter                                                     |
+
+### Gate job: `docs-checks-gate`
+
+The `docs-checks-gate` job is a dedicated status-check gate that always produces a result, even when all upstream jobs are skipped. This is required by GitHub branch protection: the rule that blocks merging until "Documentation Quality Check" passes must see the check present on every PR, including those that do not touch documentation paths.
+
+**Gate logic:**
+
+```yaml
+docs-checks-gate:
+  needs: [detect-changes, docs-checks]
+  if: always() && (github.event_name != 'pull_request' || github.event.action != 'closed')
+  runs-on: ubuntu-24.04
+  steps:
+    - name: Evaluate docs checks result
+      run: |
+        DOCS_CHANGED="${{ needs.detect-changes.outputs.docs }}"
+        DOCS_RESULT="${{ needs.docs-checks.result }}"
+        if [[ "$DOCS_CHANGED" != "true" ]]; then
+          echo "Docs paths not changed; skipping docs checks — gate passes."
+          exit 0
+        fi
+        if [[ "$DOCS_RESULT" == "success" ]]; then
+          echo "Docs checks passed."
+          exit 0
+        fi
+        echo "Docs checks result: $DOCS_RESULT"
+        exit 1
+```
+
+The gate skips itself on `closed` PR events (using the same `github.event.action != 'closed'` guard as `detect-changes`) because the workflow fires on `closed` only to trigger the post-merge notification; no quality check result is needed in that case.
+
+**Behaviour by scenario:**
+
+| Scenario | `detect-changes.outputs.docs` | `docs-checks.result` | Gate result |
+| -------- | ----------------------------- | -------------------- | ----------- |
+| PR does not touch docs paths | `false` | `skipped` | Pass |
+| PR touches docs paths, all checks pass | `true` | `success` | Pass |
+| PR touches docs paths, a check fails | `true` | `failure` | Fail |
+| Merged PR event (`action == closed`) | — | — | Gate is skipped entirely |
+
+**Common failure causes:**
+
+| Symptom | Likely cause |
+| ------- | ------------ |
+| Gate fails but no individual check step is marked red | `docs-checks` was cancelled (e.g., by a concurrency group); re-run the workflow |
+| Gate fails on a PR that only touches non-docs files | The `paths:` filter in `docs-check.yml` unexpectedly matched; check which files triggered the workflow |
+| Gate never appears on a PR | The workflow was not installed in the aggregated repository, or the `pull_request` trigger is missing |
 
 ## 2. `docs-checks.yml` — Reusable Quality Checks Workflow
 
