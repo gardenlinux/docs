@@ -23,14 +23,15 @@ repositories into a unified documentation site.
 
 ## Working with the Documentation System Locally
 
-For more substantial changes — like adding new pages, restructuring content, or
-working on the aggregation system itself — you'll want to set up the
+For more substantial changes, (adding new pages, restructuring content, or
+working on the aggregation system itself) you will want to set up the
 documentation system locally.
 
 ### Prerequisites
 
 - Python 3.x
 - pnpm (for VitePress)
+- virtualenv (optional)
 - Git
 
 ### Step 1: Clone the Repository
@@ -49,6 +50,32 @@ pnpm install
 This installs VitePress and other Node.js dependencies needed to build the
 documentation site.
 
+:::tip Problems with installing Python Dependencies?
+
+Potentially, your Linux distribution or other operating system might forbid you from installing
+python dependencies system wide.
+
+To go around this, it is wise practice to use a [virtual environment](https://www.w3schools.com/python/python_virtualenv.asp).
+
+We use [`virtualenv`](https://virtualenv.pypa.io/en/latest/). Install virtualenv via your distributions package manager
+or a method appropriate for your operating system.
+
+Then, create the virtual environment and activate it.
+
+```bash
+virtualenv .venv && source .venv/bin/activate
+```
+
+afterwards, continue working like normal.
+
+In the end, you can deactivate the environment using
+
+```bash
+deactivate
+```
+or closing the Terminal.
+:::
+
 ### Step 3: Aggregate Documentation
 
 #### From Remote Repositories (Production)
@@ -62,7 +89,7 @@ make aggregate
 This fetches documentation from the configured repositories at their locked
 commit hashes.
 
-#### GitHub API token
+:::info Add A GitHub API Token To Counter Rate Limiting
 
 `make aggregate` also fetches every release from `gardenlinux/gardenlinux` via
 the GitHub Releases API to generate per-release note pages and to validate
@@ -73,6 +100,11 @@ to prevent rate-limiting:
 export GITHUB_TOKEN=$(gh auth token)
 make aggregate
 ```
+
+:::tip
+You can add the `export` statement to you Shell's configuration file to avoid having to re-export it in different sessions.
+:::
+:::
 
 #### From Local Repositories (Development)
 
