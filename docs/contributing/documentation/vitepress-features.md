@@ -296,9 +296,23 @@ The page title. Used in navigation, search results, and as the default heading.
 
 A short summary of the page content. Used as the meta description for SEO and displayed by `<SectionIndex />` for child page listings.
 
+### Sidebar Configuration
+
 **`order`** (number, default: 999)
 
 Controls sort order in the sidebar and section listings. Lower numbers appear first. Use this to create logical groupings (e.g., `0` for intro, `10` for basics, `100` for advanced).
+
+See [`sortMenusByFrontmatterOrder`](https://vitepress-sidebar.cdget.com/guide/options#sortmenusbyfrontmatterorder) for details.
+
+**`exclude`** (boolean, default: false)
+
+Set `exclude: true` in a page's front-matter to hide it from the sidebar. The page is still built and accessible at its URL.
+
+See [`excludeFilesByFrontmatterFieldName`](https://vitepress-sidebar.cdget.com/guide/options#excludefilesbyfrontmatterfieldname) for details.
+
+:::info Additional Sidebar Options
+Have a look at the official [Sidebar Options Documentation](https://vitepress-sidebar.cdget.com/guide/options) for all possible configuration options.
+:::
 
 ### Aggregated Content Fields
 
