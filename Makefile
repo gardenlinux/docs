@@ -1,4 +1,4 @@
-.PHONY: help run build preview publish transform aggregate aggregate-repo aggregate-update-repo aggregate-repo-single aggregate-update-repo-single test-aggregate-local clean clean-projects clean-aggregated-git test test-unit test-integration check spelling linkcheck woke glossary glossary-check format
+.PHONY: help run build preview publish transform aggregate aggregate-repo aggregate-update-repo aggregate-repo-single aggregate-update-repo-single test-aggregate-local clean clean-projects clean-aggregated-git test test-unit test-integration check spelling linkcheck woke glossary glossary-check format check-system-deps
 
 help:
 	@echo "Garden Linux Documentation Hub - Available targets:"
@@ -36,7 +36,12 @@ help:
 	@echo "    clean                  - Clean aggregated docs and build artifacts"
 	@echo ""
 
-install:
+check-system-deps:
+	@if ! command -v pnpm >/dev/null 2>&1; then @echo "pnpm not found! Please install using your package manager."; exit 1; fi
+	@if ! command -v python3 --version >/dev/null 2>&1; then @echo "python3 not installed! Please install using your package manager."; exit 1; fi
+	@if ! command -v git --version >/dev/null 2>&1; then @echo "git not installed! Please install using you package manager."; exit 1; fi
+
+install: check-system-deps
 	@echo "Installing dependencies..."
 	pnpm install
 	pip install -r requirements.txt
@@ -98,7 +103,7 @@ aggregate-update-repo-single:
 		$(if $(REF),--override-ref $(REF)) \
 		$(if $(COMMIT),--override-commit $(COMMIT))
 
-run:
+run: check-system-deps
 	pnpm run docs:dev
 
 build: install clean aggregate
