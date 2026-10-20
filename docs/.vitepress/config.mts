@@ -110,7 +110,7 @@ export default defineConfig({
       {
         rel: "icon",
         type: "image/svg+xml",
-        href: `/gardenlinux-logo.svg`,
+        href: `${base}gardenlinux-logo.svg`,
       },
     ],
     ["meta", { name: "theme-color", content: "#009f76" }],
