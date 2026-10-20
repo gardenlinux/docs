@@ -103,7 +103,7 @@ make aggregate
 
 :::tip
 You can add the `export` statement to you Shell's configuration file to avoid having to re-export it in different sessions.
-:::
+
 :::
 
 #### From Local Repositories (Development)
