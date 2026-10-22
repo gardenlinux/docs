@@ -46,7 +46,7 @@
       "name": "repo",
       "url": "https://github.com/gardenlinux/repo",
       "ref": "main",
-      "commit": "2f987425f6406a4722c9276b23c3dd9f0a467604"
+      "commit": "442dd1d1c15c9ee88c7db681b61477a55c1a91bc"
     },
     {
       "name": "glrd",
