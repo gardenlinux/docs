@@ -3,6 +3,7 @@
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "c8c219d19a04df4064eebd7abda25ca92123220e",
       "root_files": [
@@ -16,12 +17,14 @@
     {
       "name": "builder",
       "url": "https://github.com/gardenlinux/builder",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "61ae6c9ff38e0892228ccb3f52ac2e2d3548b12b"
     },
     {
       "name": "python-gardenlinux-lib",
       "url": "https://github.com/gardenlinux/python-gardenlinux-lib",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "4da13c46b04d531d0bccfb5cb882f8581564af3b",
       "structure": "sphinx",
@@ -33,38 +36,50 @@
     {
       "name": "package-linux",
       "url": "https://github.com/gardenlinux/package-linux",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "39d7639fdaceb3249732eaf8286898a011067600"
     },
     {
       "name": "package-build",
       "url": "https://github.com/gardenlinux/package-build",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "4ab74ba588be9b9fd070941ec959e22e9b11d2c2"
     },
     {
       "name": "repo",
       "url": "https://github.com/gardenlinux/repo",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "2f987425f6406a4722c9276b23c3dd9f0a467604"
     },
     {
       "name": "glrd",
       "url": "https://github.com/gardenlinux/glrd",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "9af61e86b22635588b57765342fb54fedc1d05e0"
     },
     {
       "name": "gardenlinux-nvidia-installer",
       "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "7dd97a72be5e54cd8ba2e531c32c3a56e2e07fa0"
     },
     {
       "name": "daily",
       "url": "https://github.com/gardenlinux/daily",
+      "docs_path": "docs",
       "ref": "gh-pages",
-      "commit": "83777d6e3a1146482f8c2aa05a4c8fcab072ede0"
+      "commit": "83777d6e3a1146482f8c2aa05a4c8fcab072ede0",
+      "docs_paths": [
+        "docs/**",
+        ".github/workflows/docs-check.yml",
+        "README.md",
+        "DEVELOPER.md"
+      ]
     }
   ]
 }

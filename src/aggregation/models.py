@@ -20,6 +20,19 @@ class RepoConfig:
     structure: str = "flat"
     media_directories: List[str] = field(default_factory=list)
     target_map: Dict[str, str] = field(default_factory=dict)
+    docs_paths: List[str] = field(default_factory=list)
+
+    @property
+    def resolved_docs_paths(self) -> List[str]:
+        """Documentation-relevant glob patterns for this repository.
+
+        Returns the explicit ``docs_paths`` override when set, otherwise derives
+        the patterns from ``docs_path`` and ``root_files``. Used by the docs CI
+        to decide whether a pull request touched documentation.
+        """
+        if self.docs_paths:
+            return list(self.docs_paths)
+        return [f"{self.docs_path}/**", *self.root_files]
 
     @property
     def is_local(self) -> bool:
@@ -69,6 +82,7 @@ class RepoConfig:
             structure=structure,
             media_directories=media_directories,
             target_map=data.get("target_map", {}),
+            docs_paths=data.get("docs_paths", []),
         )
 
 

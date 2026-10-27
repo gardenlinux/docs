@@ -1,6 +1,6 @@
 ---
 title: "Documentation CI Workflows Reference"
-description: "Per-workflow reference for the four GitHub Actions workflows that drive documentation validation, preview, and lock management"
+description: "Per-workflow reference for the GitHub Actions workflows that drive documentation validation, preview, and lock management"
 order: 7
 related_topics:
   - /contributing/documentation/documentation_workflow.md
@@ -19,52 +19,136 @@ related_topics:
 
 ## 1. `docs-check.yml` — Per-Repo Caller Workflow
 
-|              |                                                                         |
-| ------------ | ----------------------------------------------------------------------- |
-| **File**     | `.github/workflows/docs-check.yml`                                      |
-| **Lives in** | Each aggregated repository                                              |
-| **Type**     | Caller workflow — invokes the reusable `docs-checks.yml` from `docs` |
+|              |                                                                                     |
+| ------------ | ----------------------------------------------------------------------------------- |
+| **File**     | `.github/workflows/docs-check.yml`                                                  |
+| **Lives in** | Each aggregated repository                                                          |
+| **Type**     | Caller workflow — invokes the reusable orchestrator `aggregated-repo-docs.yml` from `docs` |
+
+The caller is intentionally thin: it only wires up the triggers and delegates to
+the reusable orchestrator in `docs`, which owns all documentation-path logic and
+the notify/commit-lock decision.
 
 ### Triggers
 
 ```yaml
 on:
   pull_request:
-    branches: [main]
+    branches: [main] # gh-pages for daily
     types: [opened, synchronize, reopened, closed]
-    paths:
-      - "docs/**"
-      - "features/*/README.md"
-      - "features/*/info.yaml"
-      - "flavors.yaml"
-      - "CONTRIBUTING.md"
-      - "SECURITY.md"
   push:
-    branches: [main]
-    paths:
-      # (same path list as above)
+    branches: [main] # gh-pages for daily
 ```
 
-The workflow reacts to both PR events and pushes on documentation-relevant
-paths. The `closed` PR type is intentionally included so the notification job
-can detect merged PRs.
+The workflow runs on every pull request — with **no `paths:` filter** — so the
+documentation gate check is always produced for branch protection, and on every
+push to the default branch. Documentation-path detection happens inside the
+orchestrator, using the patterns from `repos-config.json`.
 
 ### Jobs
 
-| Job                  | Condition                                                                              | Purpose                                                                     |
-| -------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `detect-changes`     | Skipped on `action == 'closed'`                                                       | Detects whether documentation-relevant paths changed |
-| `docs-checks`        | Skipped when `action == 'closed'`                                                     | Calls the reusable quality-check workflow in `docs` with override inputs |
-| `docs-checks-gate`   | `if: always()`, skipped on `action == 'closed'`                                       | Status-check gate — always reports success or failure so branch protection rules can reference it |
-| `notify-docs`        | Runs after `docs-checks` succeeds **or** when a PR is merged (always-conditional)     | Generates a GitHub App token and sends a `repository_dispatch` to `docs` |
+| Job    | Type                   | Purpose                                                                                            |
+| ------ | ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `docs` | reusable workflow call | Calls `gardenlinux/docs/.github/workflows/aggregated-repo-docs.yml@main` with `repo: <name>`      |
 
-### Inputs Passed to Reusable Workflow
+### Inputs Passed to the Orchestrator
 
-| Input             | Value                                                     |
-| ----------------- | --------------------------------------------------------- |
-| `override-repo`   | Hard-coded repository name (e.g., `gardenlinux`)          |
-| `override-ref`    | `github.head_ref` (PR branch) or `github.ref_name` (push) |
-| `override-commit` | `pull_request.head.sha` or `github.sha`                   |
+| Input  | Value                                                   |
+| ------ | ------------------------------------------------------- |
+| `repo` | Hard-coded repository name (e.g., `gardenlinux`, `repo`) |
+
+### Required Secrets
+
+The caller forwards all secrets with `secrets: inherit`:
+
+| Secret                 | Purpose                                                   |
+| ---------------------- | --------------------------------------------------------- |
+| `DOCS_BOT_APP_ID`      | GitHub App identifier for `gardenlinux-docs-bot`          |
+| `DOCS_BOT_PRIVATE_KEY` | Private key used to sign the JWT for App token generation |
+
+### Example
+
+```yaml
+name: Documentation Quality Check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, closed]
+  push:
+    branches: [main]
+
+jobs:
+  docs:
+    uses: gardenlinux/docs/.github/workflows/aggregated-repo-docs.yml@main
+    with:
+      repo: repo
+    secrets: inherit
+```
+
+### Job Graph
+
+```mermaid
+flowchart TD
+    A["PR / push event<br/>in aggregated repo"] --> B["docs-check.yml<br/>job: docs"]
+    B -->|workflow_call<br/>repo: <name>| C["aggregated-repo-docs.yml @ docs"]
+
+    class A input
+    class B,C process
+```
+
+### Common Failure Causes
+
+| Symptom               | Likely cause                                                                          |
+| --------------------- | ------------------------------------------------------------------------------------- |
+| Workflow does not run | Caller workflow not installed, or `pull_request`/`push` triggers missing              |
+| `docs` job fails      | Error in the orchestrator — see the run in the `docs` repository's **Actions** tab    |
+| Notify fails          | `DOCS_BOT_APP_ID` or `DOCS_BOT_PRIVATE_KEY` secret missing/invalid; App not installed on `docs` |
+
+## 2. `aggregated-repo-docs.yml` — Reusable Orchestrator
+
+|              |                                             |
+| ------------ | ------------------------------------------- |
+| **File**     | `.github/workflows/aggregated-repo-docs.yml` |
+| **Lives in** | `gardenlinux/docs`                          |
+| **Type**     | Reusable workflow (`workflow_call`)         |
+
+This workflow contains all documentation CI logic for aggregated repositories.
+Each repository's thin `docs-check.yml` caller invokes it. It reads
+`repos-config.json` in `docs` as the single source of truth for
+documentation-relevant paths, so the path definitions live in exactly one place.
+
+### Inputs
+
+| Input  | Required | Description                                            |
+| ------ | -------- | ------------------------------------------------------ |
+| `repo` | yes      | Repository name as it appears in `repos-config.json`   |
+
+### Required Secrets
+
+| Secret                 | Purpose                                                   |
+| ---------------------- | --------------------------------------------------------- |
+| `DOCS_BOT_APP_ID`      | GitHub App identifier for `gardenlinux-docs-bot`          |
+| `DOCS_BOT_PRIVATE_KEY` | Private key used to sign the JWT for App token generation |
+
+### Jobs
+
+| Job                | Condition                                                              | Purpose                                                                             |
+| ------------------ | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `detect-changes`   | —                                                                      | Derives documentation globs from `repos-config.json` and detects changed docs paths |
+| `docs-checks`      | docs changed and `action != 'closed'`                                  | Calls the reusable `docs-checks.yml` with override inputs                           |
+| `docs-checks-gate` | `if: always()`, skipped on `action == 'closed'`                        | Status-check gate — always reports success or failure so branch protection rules can reference it |
+| `notify-docs`      | PR event, docs changed, and (checks succeeded **or** PR merged)        | Generates a GitHub App token and sends a `repository-dispatched` `docs-pr` event    |
+
+### Change Detection
+
+The `detect-changes` job:
+
+1. Checks out `gardenlinux/docs` to read `repos-config.json`.
+2. Writes a `dorny/paths-filter` configuration for the repository, using its
+   `docs_paths` when set, otherwise `["<docs_path>/**", ...root_files]`.
+3. Runs `dorny/paths-filter` — via the GitHub REST API for pull requests, and
+   via git for push events.
 
 ### Dispatch Payload Sent to `docs`
 
@@ -78,49 +162,40 @@ can detect merged PRs.
 }
 ```
 
-### Required Secrets
-
-| Secret                 | Purpose                                                   |
-| ---------------------- | --------------------------------------------------------- |
-| `DOCS_BOT_APP_ID`      | GitHub App identifier for `gardenlinux-docs-bot`          |
-| `DOCS_BOT_PRIVATE_KEY` | Private key used to sign the JWT for App token generation |
-
 ### Outputs / Side-Effects
 
-- On open/synchronize PR: calls reusable workflow → on success dispatches
-  `docs-pr` event to `docs`.
-- On merged PR: skips quality checks, dispatches `docs-pr` event with
-  `event: merged` and `ref` set to the base branch.
+- On open/synchronize PR that touched docs: runs quality checks → on success
+  dispatches a `docs-pr` event to `docs`.
+- On merged PR that touched docs: skips quality checks, dispatches a `docs-pr`
+  event with `event: merged` and `ref` set to the base branch.
+- On PRs that did **not** touch docs: runs only the gate (which passes) and sends
+  **no** dispatch — so no docs preview PR is created or updated.
 
 ### Job Graph
 
 ```mermaid
 flowchart TD
-    A["PR event on docs paths"] --> B{action == closed?}
-    B -->|no| DC["detect-changes job"]
+    A["workflow_call<br/>repo: <name>"] --> DC["detect-changes job<br/>(paths-filter from repos-config.json)"]
     DC -->|docs changed| C["docs-checks job<br/>(calls docs-checks.yml @ docs)"]
     DC -->|docs not changed| GATE
-    C -->|success| D["notify-docs job"]
+    DC -->|PR merged, docs changed| D["notify-docs job"]
+    C -->|success| D
     C --> GATE
-    B -->|yes, merged| D
-    B -->|yes, not merged| E["workflow ends<br/>(no action)"]
     D --> F["repository_dispatch → docs<br/>event_type: docs-pr"]
     GATE["docs-checks-gate<br/>(if: always())<br/>skip → pass / fail → fail"]
 
     class A input
-    class C,D process
-    class B,DC decision
-    class E process
+    class C,D,DC process
     class F,GATE output
 ```
 
 ### Common Failure Causes
 
-| Symptom                    | Likely cause                                                                                       |
-| -------------------------- | -------------------------------------------------------------------------------------------------- |
-| `docs-checks` job fails    | Broken links, spelling errors, or woke violations in the documentation change                      |
-| `notify-docs` job fails | `DOCS_BOT_APP_ID` or `DOCS_BOT_PRIVATE_KEY` secret missing/invalid; App not installed on `docs` |
-| Workflow not triggered     | Changed files do not match the `paths:` filter                                                     |
+| Symptom                    | Likely cause                                                                                    |
+| -------------------------- | ----------------------------------------------------------------------------------------------- |
+| `detect-changes` job fails | Repository name not found in `repos-config.json`, or the registry checkout failed                |
+| `docs-checks` job fails    | Broken links, spelling errors, or woke violations in the documentation change                   |
+| `notify-docs` job fails    | `DOCS_BOT_APP_ID` or `DOCS_BOT_PRIVATE_KEY` secret missing/invalid; App not installed on `docs` |
 
 ### Gate job: `docs-checks-gate`
 
@@ -161,15 +236,19 @@ The gate skips itself on `closed` PR events (using the same `github.event.action
 | PR touches docs paths, a check fails | `true` | `failure` | Fail |
 | Merged PR event (`action == closed`) | — | — | Gate is skipped entirely |
 
+Because the gate lives inside a reusable workflow, its status-check context is
+prefixed with the caller job name (e.g. `docs / Docs checks gate`). Branch
+protection rulesets must reference that prefixed name.
+
 **Common failure causes:**
 
 | Symptom | Likely cause |
 | ------- | ------------ |
 | Gate fails but no individual check step is marked red | `docs-checks` was cancelled (e.g., by a concurrency group); re-run the workflow |
-| Gate fails on a PR that only touches non-docs files | The `paths:` filter in `docs-check.yml` unexpectedly matched; check which files triggered the workflow |
-| Gate never appears on a PR | The workflow was not installed in the aggregated repository, or the `pull_request` trigger is missing |
+| Gate fails on a PR that only touches non-docs files | The documentation patterns for the repository in `repos-config.json` matched; check `docs_path`/`root_files`/`docs_paths` |
+| Gate never appears on a PR | The caller workflow was not installed in the aggregated repository, or the `pull_request` trigger is missing |
 
-## 2. `docs-checks.yml` — Reusable Quality Checks Workflow
+## 3. `docs-checks.yml` — Reusable Quality Checks Workflow
 
 |              |                                                           |
 | ------------ | --------------------------------------------------------- |
@@ -201,9 +280,10 @@ on:
     branches: [main]
 ```
 
-When called via `workflow_call`, it validates external repo documentation.
-When triggered directly by PR/push in `docs`, it validates the aggregator's
-own documentation (with no overrides — all repos use their pinned commits).
+When called via `workflow_call`, it validates external repo documentation. This
+happens through the `aggregated-repo-docs.yml` orchestrator for aggregated repos,
+or directly for the aggregator's own PR/push (with no overrides — all repos use
+their pinned commits).
 
 ### Inputs
 
@@ -270,7 +350,7 @@ flowchart TD
 | `spelling` job fails  | Unknown words — add them to the project's codespell dictionary (`.codespell/project-words.txt`)              |
 | `woke` job fails      | Non-inclusive language detected — see the woke rule file (`.woke.yml`) for alternatives                      |
 
-## 3. `docs-pr.yml` — Automated Docs PR Workflow
+## 4. `docs-pr.yml` — Automated Docs PR Workflow
 
 |              |                                                               |
 | ------------ | ------------------------------------------------------------- |
@@ -293,9 +373,14 @@ on:
       event: # required, choice: [pr_success, merged]
 ```
 
-The workflow is normally triggered by `repository_dispatch` from a source
-repo's `docs-check.yml`. It can also be triggered manually via
+The workflow is normally triggered by `repository_dispatch` from the
+`aggregated-repo-docs.yml` orchestrator (invoked by each repository's
+`docs-check.yml` caller). It can also be triggered manually via
 `workflow_dispatch` for debugging or re-running a failed automation.
+
+Because the orchestrator only dispatches for documentation-relevant pull
+requests, every dispatch results in a commit-lock update — non-documentation
+merges never reach this workflow.
 
 ### Dispatch Payload Schema
 
@@ -389,7 +474,7 @@ flowchart TD
 | "Repository not found in repos-config.json" | The dispatching repo's name does not match any `name` field in `repos-config.json`            |
 | Comment not posted                          | App token lacks write access to the source repo's issues/PRs                                  |
 
-## 4. `check-pr-main.yml` — `repos-config.json` Validator
+## 5. `check-pr-main.yml` — `repos-config.json` Validator
 
 |              |                                       |
 | ------------ | ------------------------------------- |

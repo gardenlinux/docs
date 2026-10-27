@@ -31,7 +31,7 @@ The documentation CI pipeline serves three guarantees:
    commit lock for that repository is automatically updated so the published
    site reflects the latest content without any manual intervention.
 
-These three properties are implemented by four GitHub Actions workflows that
+These three properties are implemented by five GitHub Actions workflows that
 span two repository boundaries. See [CI Workflows Reference](./ci-workflows-reference.md)
 for the per-workflow details.
 
@@ -41,6 +41,9 @@ for the per-workflow details.
 
 The central aggregation hub. It hosts:
 
+- The reusable orchestrator workflow ([`aggregated-repo-docs.yml`](https://github.com/gardenlinux/docs/blob/main/.github/workflows/aggregated-repo-docs.yml)),
+  which owns all documentation CI logic (change detection, quality checks, the
+  gate, and the notify dispatch) for aggregated repositories.
 - The reusable quality-checks workflow ([`docs-checks.yml`](https://github.com/gardenlinux/docs/blob/main/.github/workflows/docs-checks.yml)), which can be
   called from any aggregated repo.
 - The automated PR workflow ([`docs-pr.yml`](https://github.com/gardenlinux/docs/blob/main/.github/workflows/docs-pr.yml)), which creates and maintains draft
@@ -48,17 +51,20 @@ The central aggregation hub. It hosts:
 - The config validator workflow ([`check-pr-main.yml`](https://github.com/gardenlinux/docs/blob/main/.github/workflows/check-pr-main.yml)), which guards `main`
   against non-production refs in [`repos-config.json`](https://github.com/gardenlinux/docs/blob/main/repos-config.json).
 - The [`repos-config.json`](https://github.com/gardenlinux/docs/blob/main/repos-config.json) file that records which repo and which exact commit
-  is currently published.
+  is currently published, and which paths count as documentation for each repo.
 
 ### Aggregated repositories
 
-Each repository listed in `repos-config.json` contains `docs-check.yml` workflow that:
+Each repository listed in `repos-config.json` contains a thin `docs-check.yml`
+caller workflow that:
 
-- reacts to pull request and push events on documentation-relevant paths,
-- calls the reusable `docs-checks.yml` from `docs`, passing the PR's
-  branch and commit as override inputs, and
-- on success (or on merge), dispatches a `repository_dispatch` event to
-  `docs` to trigger the automated PR workflow.
+- reacts to pull request and push events,
+- delegates to the reusable `aggregated-repo-docs.yml` orchestrator in `docs`,
+  passing the repository name, and
+- lets the orchestrator decide — from `repos-config.json` — whether the PR
+  touched documentation, run the quality checks, and, on success (or on merge),
+  dispatch a `repository_dispatch` event to `docs` to trigger the automated PR
+  workflow.
 
 ### `gardenlinux-docs-bot` GitHub App
 
@@ -89,19 +95,20 @@ flowchart TD
     A[Developer opens / updates PR\nin aggregated repo] --> B
 
     subgraph source["Aggregated Repo (e.g. gardenlinux)"]
-        B["docs-check.yml\ntriggered by PR event\non docs/** paths"]
-        B --> C["calls reusable workflow\ndocs-checks.yml @ docs\nwith override-repo, override-ref,\noverride-commit"]
+        B["docs-check.yml\n(thin caller)\ntriggered by PR event"]
+        B --> C["calls reusable workflow\naggregated-repo-docs.yml @ docs\nwith repo name"]
     end
 
     subgraph docsng["gardenlinux/docs"]
-        C --> D["docs-checks.yml\nJob: aggregate\n(runs aggregate.py with overrides)"]
+        C --> DC["detect-changes job\npaths-filter from repos-config.json\n(docs changed?)"]
+        DC -->|docs changed| D["docs-checks.yml\nJob: aggregate\n(runs aggregate.py with overrides)"]
         D --> D2["Job: transform\n(glossary linking)"]
         D --> E["Job: linkcheck\n(lychee)"]
         D --> F["Job: spelling\n(codespell via make spelling)"]
         D --> G["Job: woke\n(inclusive language)"]
     end
 
-    E & F & G -->|all pass| H["notify-docs job\nin aggregated repo"]
+    E & F & G -->|all pass| H["notify-docs job\nin aggregated-repo-docs.yml"]
     H -->|repository_dispatch\nevent: docs-pr| I
 
     subgraph docsng2["gardenlinux/docs"]
@@ -117,7 +124,7 @@ flowchart TD
     N --> O
 
     O --> P{Source PR merged?}
-    P -->|yes| Q["docs-check.yml\nclosed+merged event\nskips quality checks\ndispatches event=merged"]
+    P -->|yes, docs changed| Q["docs-check.yml closed+merged\n-> detect-changes (docs changed)\n-> notify-docs dispatches event=merged"]
     Q --> R["docs-pr.yml\nupdates lock to merge commit\nsets ref to base branch\nun-drafts PR in docs"]
     R --> S[Maintainer merges\ndocs PR]
     S --> T[Published site updated]
@@ -125,7 +132,7 @@ flowchart TD
     P -->|no, more commits| A
 
     class A,S input
-    class B,C,D,E,F,G,H,I,J,K,Q,R process
+    class B,C,DC,D,E,F,G,H,I,J,K,Q,R process
     class P decision
     class L,M,N,O process
     class T output
@@ -137,8 +144,9 @@ flowchart TD
 
 The following diagram shows the event sequence when a contributor opens a new
 PR (or pushes additional commits to an open PR) in an aggregated repository.
-The sequence assumes the aggreagred repository already has `docs-check.yml`
-installed and the docs-related path filter matches.
+The sequence assumes the aggregated repository already has the thin
+`docs-check.yml` caller installed and the PR touches documentation-relevant
+paths (as defined in `repos-config.json`).
 
 ```mermaid
 sequenceDiagram
@@ -150,17 +158,17 @@ sequenceDiagram
     participant Netlify
 
     Dev->>SrcRepo: push commit to PR branch<br/>(docs/** path changed)
-    SrcRepo->>SrcRepo: docs-check.yml triggered<br/>(PR opened / synchronize)
-    SrcRepo->>DocsNG: workflow_call → docs-checks.yml<br/>override-repo, override-ref, override-commit
-    DocsNG->>DocsNG: aggregate job<br/>(aggregate.py with overrides)
-    DocsNG->>DocsNG: transform job<br/>(glossary linking)
+    SrcRepo->>SrcRepo: docs-check.yml triggered<br/>(PR opened / synchronize, thin caller)
+    SrcRepo->>DocsNG: workflow_call → aggregated-repo-docs.yml<br/>with repo name
+    DocsNG->>DocsNG: detect-changes job<br/>(paths-filter from repos-config.json)
+    DocsNG->>DocsNG: docs-checks job → docs-checks.yml<br/>(aggregate.py with overrides)
+    DocsNG->>DocsNG: transform job (glossary linking)
     DocsNG->>DocsNG: linkcheck job (lychee)
     DocsNG->>DocsNG: spelling job (codespell)
     DocsNG->>DocsNG: woke job (inclusive language)
-    DocsNG-->>SrcRepo: all checks pass ✓
-    SrcRepo->>SrcRepo: notify-docs job runs
-    SrcRepo->>Bot: create GitHub App token<br/>(repos: docs, aggregated repo)
-    SrcRepo->>DocsNG: repository_dispatch<br/>event_type: docs-pr<br/>payload: {repo, pr_number, commit_sha, ref, event: pr_success}
+    DocsNG-->>DocsNG: all checks pass ✓
+    DocsNG->>Bot: notify-docs job creates GitHub App token<br/>(repos: docs)
+    DocsNG->>DocsNG: repository_dispatch<br/>event_type: docs-pr<br/>payload: {repo, pr_number, commit_sha, ref, event: pr_success}
     DocsNG->>DocsNG: docs-pr.yml triggered
     DocsNG->>DocsNG: create/update branch<br/>auto/<repo>/<pr_number>
     DocsNG->>DocsNG: update repos-config.json<br/>commit lock → override-commit
@@ -174,9 +182,10 @@ sequenceDiagram
 
 ### **Scenario B**: Source PR merged
 
-When the source PR is merged, `docs-check.yml` fires again with
-`action: closed` and `merged: true`. The quality checks are skipped; only the
-notification job runs to promote the draft docs PR to ready-for-review.
+When the source PR is merged, the caller fires again with `action: closed` and
+`merged: true`. The orchestrator detects that the merge touched docs, skips the
+quality checks, and runs only the notification job to promote the draft docs PR
+to ready-for-review. Merges that did not touch docs dispatch nothing.
 
 ```mermaid
 sequenceDiagram
@@ -187,10 +196,13 @@ sequenceDiagram
     participant Bot as gardenlinux-docs-bot
 
     Maint->>SrcRepo: merge PR into main
-    SrcRepo->>SrcRepo: docs-check.yml triggered<br/>(PR closed + merged = true)<br/>docs-checks job SKIPPED
-    SrcRepo->>SrcRepo: notify-docs job runs<br/>(always, merged condition)
-    SrcRepo->>Bot: create GitHub App token
-    SrcRepo->>DocsNG: repository_dispatch<br/>event_type: docs-pr<br/>payload: {repo, pr_number,<br/>commit_sha: merge_commit_sha,<br/>ref: base_branch,<br/>event: merged}
+    SrcRepo->>SrcRepo: docs-check.yml triggered<br/>(PR closed + merged = true, thin caller)
+    SrcRepo->>DocsNG: workflow_call → aggregated-repo-docs.yml<br/>with repo name
+    DocsNG->>DocsNG: detect-changes job<br/>(docs changed? yes)
+    DocsNG->>DocsNG: docs-checks job SKIPPED<br/>(action == closed)
+    DocsNG->>DocsNG: notify-docs job runs<br/>(merged + docs changed)
+    DocsNG->>Bot: create GitHub App token
+    DocsNG->>DocsNG: repository_dispatch<br/>event_type: docs-pr<br/>payload: {repo, pr_number,<br/>commit_sha: merge_commit_sha,<br/>ref: base_branch,<br/>event: merged}
     DocsNG->>DocsNG: docs-pr.yml triggered
     DocsNG->>DocsNG: update branch auto/<repo>/<pr_number>
     DocsNG->>DocsNG: update repos-config.json<br/>commit → merge_commit_sha<br/>ref → base branch (main)
@@ -209,11 +221,11 @@ be visible.
 ### Quality checks fail in the aggregated repo
 
 If any of the `linkcheck`, `spelling`, or `woke` jobs in `docs-checks.yml`
-fail, the `notify-docs` job in `docs-check.yml` does **not** run (the
-`needs: [docs-checks]` condition `result == 'success'` is not met). No
-dispatch event is sent to `docs`, and no draft PR is created or updated.
+fail, the `notify-docs` job in `aggregated-repo-docs.yml` does **not** run (the
+`docs-checks` job result is not `success`). No dispatch event is sent to `docs`,
+and no draft PR is created or updated.
 
-The failure is visible as a failed status check directly on the aggregated repo PR.
+The failure is visible as a failed status check on the aggregated repo PR.
 
 ![aggregated repo PR with failed check checks](../assets/qa-checks-fail.png)
 
@@ -257,13 +269,14 @@ details.
 
 | Symptom | Where to look |
 |---------|--------------|
-| aggregatated-repo (source) PR missing docs status check | **Actions** tab of the aggregated repo → `Documentation Quality Check` run |
-| Quality check job details (which lint rule failed) | Expand the failing job step in the aggregated repo Actions run |
+| Aggregated-repo (source) PR missing docs status check | **Actions** tab of the aggregated repo → `Documentation Quality Check` run |
+| Quality check job details (which lint rule failed) | Expand the failing job in the `Documentation Quality Check` run (the called `aggregated-repo-docs.yml` / `docs-checks.yml` jobs appear nested) |
 | No comment on source PR with preview link | **Actions** tab of `docs` → `Create/Update Docs PR` run; check the `Comment on source PR` step |
 | Draft PR in `docs` not created | **Actions** tab of `docs` → `Create/Update Docs PR` run; check `Create or update branch` and `Create or update PR` steps |
 | `repos-config.json` ref validation fails | **Checks** tab on the draft PR in `docs` → `Validate repos-config.json` run |
 | Netlify preview not building | Netlify dashboard → deploy log for the docs PR branch |
 | Bot cannot authenticate | Verify `DOCS_BOT_APP_ID` and `DOCS_BOT_PRIVATE_KEY` secrets are set in the aggregated repository's settings |
+| `detect-changes` fails | Check that `repos-config.json` has an entry (with `docs_path`) for the repository |
 
 ## Related Topics
 
