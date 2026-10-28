@@ -4,9 +4,8 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "docs_path": "docs",
-      "ref": "main",
-      "commit": "2c8c0edebb39ab5bef10c06fbf7917d6203f1ef3",
-
+      "ref": "cleanup/adr0035",
+      "commit": "6c4c54a35caed2be3183d7924b537bc67e9733e1",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
