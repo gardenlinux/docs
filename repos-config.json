@@ -6,7 +6,6 @@
       "docs_path": "docs",
       "ref": "main",
       "commit": "2c8c0edebb39ab5bef10c06fbf7917d6203f1ef3",
-
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -26,8 +25,8 @@
       "name": "python-gardenlinux-lib",
       "url": "https://github.com/gardenlinux/python-gardenlinux-lib",
       "docs_path": "docs",
-      "ref": "main",
-      "commit": "4da13c46b04d531d0bccfb5cb882f8581564af3b",
+      "ref": "feature/adr34",
+      "commit": "8529dc4d8479354f98b76fc7549fcac6cf370cae",
       "structure": "sphinx",
       "target_map": {
         "cli.md": "reference/python-gardenlinux-lib-cli.md",
