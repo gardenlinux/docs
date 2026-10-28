@@ -14,6 +14,12 @@ from pathlib import Path
 from aggregation import DocsFetcher, copy_targeted_docs, load_config, save_config
 from aggregation.flavor_matrix import generate_flavor_matrix_docs
 from aggregation.github_api import GitHubAPIError, list_repo_releases
+from aggregation.glrd import (
+    get_active_minor_versions,
+    resolve_active_versions,
+    run_glrd_json,
+)
+from aggregation.install_pins import sync_install_pins
 from aggregation.release_notes import generate_release_notes_docs
 from aggregation.releases import generate_release_docs
 from aggregation.structure import verify_internal_links
@@ -280,6 +286,13 @@ Examples:
             save_config(str(config_path), repos)
             print(f"\n✓ Config updated: {config_path}")
 
+            # Keep python-gardenlinux-lib install pins in sync with the lock so
+            # the aggregation environments install the same commit they document
+            # (see aggregation.install_pins for the full rationale).
+            pgl_commit = resolved_commits.get("python-gardenlinux-lib")
+            if pgl_commit:
+                sync_install_pins(project_root, pgl_commit)
+
         # Generate flavor matrix documentation after all repos are aggregated
         # Use the gardenlinux temp dir (still available inside the with block)
         if gardenlinux_temp_dir and gardenlinux_temp_dir.exists():
@@ -309,17 +322,32 @@ Examples:
         f"  Fetched {len(gh_releases)} GitHub release(s), {len(existing_gh_tags)} unique tag(s)"
     )
 
+    # Resolve the effective active versions: GLRD's active minors, falling back
+    # to the newest release of the same major that also exists as a GitHub
+    # Release.  This keeps the maintained page and release-notes routing in sync
+    # even when GLRD is ahead of GitHub (e.g. GLRD lists 2150.14.0 but GitHub's
+    # latest release is 2150.13.0).
+    print(f"\n{'='*60}")
+    print("Resolving active versions...")
+    print(f"{'='*60}\n")
+    glrd_active = get_active_minor_versions()
+    all_glrd = run_glrd_json([])
+    active_versions = resolve_active_versions(glrd_active, existing_gh_tags, all_glrd)
+    print(
+        f"  GLRD active: {sorted(glrd_active)} -> effective active: {sorted(active_versions)}"
+    )
+
     # Generate release documentation from GLRD
     print(f"\n{'='*60}")
     print("Generating release documentation...")
     print(f"{'='*60}\n")
-    generate_release_docs(docs_dir, existing_gh_tags)
+    generate_release_docs(docs_dir, existing_gh_tags, active_versions)
 
     # Generate release notes from pre-fetched GitHub releases
     print(f"\n{'='*60}")
     print("Generating release notes from GitHub...")
     print(f"{'='*60}\n")
-    generate_release_notes_docs(docs_dir, gh_releases)
+    generate_release_notes_docs(docs_dir, gh_releases, active_versions)
 
     # Summary
     print(f"\n{'='*60}")

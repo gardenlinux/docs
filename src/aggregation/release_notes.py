@@ -5,7 +5,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from .glrd import get_active_minor_versions
 from .transformer import cleanup_github_markdown
 
 GITHUB_RELEASES_URL = "https://github.com/gardenlinux/gardenlinux/releases/tag"
@@ -92,7 +91,11 @@ def format_release_entry(release: dict) -> str:
     return f"{header}{body.strip()}\n"
 
 
-def generate_release_notes_docs(docs_dir: Path, releases: list[dict]) -> bool:
+def generate_release_notes_docs(
+    docs_dir: Path,
+    releases: list[dict],
+    active_versions: set[str],
+) -> bool:
     """Generate release-notes documentation files from a pre-fetched release list.
 
     The caller (``aggregate.py``) is responsible for fetching the full release
@@ -103,6 +106,9 @@ def generate_release_notes_docs(docs_dir: Path, releases: list[dict]) -> bool:
         docs_dir: Root of the VitePress ``docs/`` tree.
         releases: Full list of GitHub release objects as returned by the GitHub
             Releases API (already fetched and validated by the caller).
+        active_versions: Effective active minor version strings.  A release is
+            routed to the maintained tree when its version is in this set and to
+            the archived tree otherwise.
 
     Returns:
         ``True`` on success, ``False`` if no releases were provided.
@@ -126,12 +132,9 @@ def generate_release_notes_docs(docs_dir: Path, releases: list[dict]) -> bool:
         )
         return False
 
-    # Query GLRD to determine release status
-    print("Querying GLRD for release status...")
-    active_versions = get_active_minor_versions()
     if not active_versions:
         print(
-            "Warning: GLRD query failed, defaulting all releases to archived",
+            "Warning: No active versions resolved, defaulting all releases to archived",
             file=sys.stderr,
         )
 

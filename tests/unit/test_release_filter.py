@@ -2,6 +2,7 @@
 
 import pytest
 
+from aggregation.glrd import resolve_active_versions
 from aggregation.releases import generate_release_table
 
 # ---------------------------------------------------------------------------
@@ -175,3 +176,79 @@ class TestGenerateReleaseTableFiltering:
         assert "Warning" in captured.err
         # The present release must NOT trigger a warning.
         assert "2150.0.0" not in captured.err
+
+
+class TestResolveActiveVersions:
+    """resolve_active_versions falls back when GLRD is ahead of GitHub."""
+
+    def test_active_version_backed_by_gh_release_is_kept(self):
+        """An active version that also exists on GitHub is kept unchanged."""
+        data = _make_releases_data(_make_release(2150, 13, 0))
+        resolved = resolve_active_versions(
+            {"2150.13.0"}, existing_gh_tags={"2150.13.0"}, releases_data=data
+        )
+        assert resolved == {"2150.13.0"}
+
+    def test_falls_back_to_newest_older_gh_release(self):
+        """A GLRD-only active version falls back to the newest GH-backed minor.
+
+        Reproduces the production case: GLRD lists 2150.14.0 as active but the
+        newest GitHub release is 2150.13.0.
+        """
+        data = _make_releases_data(
+            _make_release(2150, 12, 0),
+            _make_release(2150, 13, 0),
+            _make_release(2150, 14, 0),  # in GLRD, but NOT on GitHub
+        )
+        resolved = resolve_active_versions(
+            {"2150.14.0"},
+            existing_gh_tags={"2150.12.0", "2150.13.0"},
+            releases_data=data,
+        )
+        assert resolved == {"2150.13.0"}
+
+    def test_fallback_does_not_cross_major(self):
+        """Fallback candidates are restricted to the same major version."""
+        data = _make_releases_data(
+            _make_release(1877, 26),
+            _make_release(2150, 14, 0),
+        )
+        resolved = resolve_active_versions(
+            {"2150.14.0"},
+            existing_gh_tags={"1877.26"},
+            releases_data=data,
+        )
+        assert resolved == set()
+
+    def test_no_fallback_available_drops_version_and_warns(self, capsys):
+        """When no older GH-backed release exists the version is dropped."""
+        data = _make_releases_data(_make_release(2150, 14, 0))
+        resolved = resolve_active_versions(
+            {"2150.14.0"}, existing_gh_tags=set(), releases_data=data
+        )
+        assert resolved == set()
+        captured = capsys.readouterr()
+        assert "2150.14.0" in captured.err
+        assert "Warning" in captured.err
+
+    def test_multiple_active_versions_resolved_independently(self):
+        """Each active version is resolved against its own major's candidates."""
+        data = _make_releases_data(
+            _make_release(1877, 26),
+            _make_release(2150, 13, 0),
+            _make_release(2150, 14, 0),
+        )
+        resolved = resolve_active_versions(
+            {"1877.26", "2150.14.0"},
+            existing_gh_tags={"1877.26", "2150.13.0"},
+            releases_data=data,
+        )
+        assert resolved == {"1877.26", "2150.13.0"}
+
+    def test_missing_releases_data_drops_all(self, capsys):
+        """A None releases_data leads to no fallbacks (and warnings)."""
+        resolved = resolve_active_versions(
+            {"2150.14.0"}, existing_gh_tags=set(), releases_data=None
+        )
+        assert resolved == set()
+        assert "Warning" in capsys.readouterr().err
