@@ -43,6 +43,7 @@ git operations.
     {
       "name": "repository-name",
       "url": "https://github.com/org/repo",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "abc123...",
       "root_files": ["README.md"],
@@ -79,8 +80,11 @@ git operations.
 - **Type:** String
 - **Description:** Path to documentation directory within the repository
 - **Examples:** `"docs"`, `"documentation"`, `"."` (for root)
-- **Default:** `"docs"` (may be omitted when the value is `"docs"`)
-- **Notes:** Relative to repository root; content of this directory is copied
+- **Default:** `"docs"`
+- **Required:** Yes — set explicitly for every repository in `repos-config.json`
+- **Notes:** Relative to repository root; content of this directory is copied.
+  The documentation CI also derives the repository's documentation-relevant
+  paths from `docs_path` and `root_files` (see [`docs_paths`](#docs_paths))
 
 #### `ref`
 
@@ -106,7 +110,19 @@ git operations.
 - **Example:** `["README.md", "CONTRIBUTING.md", "LICENSE"]`
 - **Default:** `[]` (no root files copied)
 - **Notes:** Files can have `github_target_path` front-matter for targeted
-  placement
+  placement. These files are also treated as documentation-relevant by the
+  documentation CI (see [`docs_paths`](#docs_paths))
+
+#### `docs_paths`
+
+- **Type:** Array of strings (glob patterns)
+- **Description:** Explicit override for the documentation-relevant paths used by
+  the documentation CI to decide whether a pull request touched documentation
+- **Example:** `["docs/**", "README.md", "DEVELOPER.md"]`
+- **Default:** Derived as `["<docs_path>/**", ...root_files]`
+- **Notes:** Only needed when a repository's documentation paths differ from the
+  derived default (e.g. `daily`, which also ships `README.md`/`DEVELOPER.md`).
+  Patterns use `*` for a single path segment and `**` for any depth
 
 #### `structure`
 
@@ -137,6 +153,7 @@ git operations.
     {
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "c4b1d8d7f878fcb3e779315d28e35fcb19ae4dfb",
       "root_files": ["CONTRIBUTING.md", "SECURITY.md"]
@@ -144,12 +161,14 @@ git operations.
     {
       "name": "builder",
       "url": "https://github.com/gardenlinux/builder",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "b10476ad8c46130f310e36daa42c6e2c14fb51a9"
     },
     {
       "name": "python-gardenlinux-lib",
       "url": "https://github.com/gardenlinux/python-gardenlinux-lib",
+      "docs_path": "docs",
       "ref": "main",
       "commit": "9142fccc3d83ab51759db7d328fa19166bc1df63",
       "structure": "sphinx",
@@ -201,6 +220,7 @@ Simplest configuration for a flat repository:
 {
   "name": "my-repo",
   "url": "https://github.com/org/my-repo",
+  "docs_path": "docs",
   "ref": "main"
 }
 ```

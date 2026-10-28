@@ -53,7 +53,7 @@ def save_config(config_path: str, repos: List[RepoConfig]) -> None:
             {
                 "name": repo.name,
                 "url": repo.url,
-                **({"docs_path": repo.docs_path} if repo.docs_path != "docs" else {}),
+                "docs_path": repo.docs_path,
                 **({"target_path": repo.target_path} if repo.target_path else {}),
                 **({"ref": repo.ref} if repo.ref else {}),
                 **({"commit": repo.commit} if repo.commit else {}),
@@ -65,6 +65,7 @@ def save_config(config_path: str, repos: List[RepoConfig]) -> None:
                     else {}
                 ),
                 **({"target_map": repo.target_map} if repo.target_map else {}),
+                **({"docs_paths": repo.docs_paths} if repo.docs_paths else {}),
             }
             for repo in repos
         ]

@@ -44,7 +44,9 @@ Edit `repos-config.json` and add a new entry to the `repos` array:
 
 - **`name`**: Unique identifier for the repository
 - **`url`**: Git URL or `file://` path for local development
-- **`docs_path`**: Path to docs directory within the repository
+- **`docs_path`**: Path to docs directory within the repository. Set explicitly
+  for every repository in `repos-config.json` (defaults to `"docs"` if omitted,
+  but do not rely on the default)
 - **`ref`**: Git branch or tag to fetch from
 
 ### Optional Fields
@@ -52,6 +54,11 @@ Edit `repos-config.json` and add a new entry to the `repos` array:
 - **`commit`**: Lock to a specific commit hash for reproducibility
 - **`root_files`**: List of root-level files to copy (e.g.,
   `["README.md", "CONTRIBUTING.md"]`)
+- **`docs_paths`**: Explicit override for the documentation-relevant glob
+  patterns used by the documentation CI to detect documentation changes. By
+  default this is derived as `["<docs_path>/**", ...root_files]`; only set it
+  when a repository's documentation paths differ from that default (e.g.
+  `daily`)
 - **`structure`**: Directory mapping strategy (`"flat"` or `"sphinx"`; see below)
 - **`media_directories`**: List of media directories to copy (e.g.,
   `[".media", "_static", "assets"]`)
@@ -146,6 +153,36 @@ Or manually add the commit hash:
 }
 ```
 
+## Step 6: Install the Documentation CI Caller Workflow
+
+Add a thin caller workflow at `.github/workflows/docs-check.yml` in the
+repository. It delegates all documentation CI (change detection, quality checks,
+the merge gate, and the notify/commit-lock dispatch) to the reusable
+orchestrator in `gardenlinux/docs`:
+
+```yaml
+name: Documentation Quality Check
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, closed]
+  push:
+    branches: [main]
+
+jobs:
+  docs:
+    uses: gardenlinux/docs/.github/workflows/aggregated-repo-docs.yml@main
+    with:
+      repo: new-repo
+    secrets: inherit
+```
+
+Replace `new-repo` with the repository's `name` from `repos-config.json` and
+adjust the branch to the repository's default branch. See
+[CI Workflows Reference](./ci-workflows-reference.md) for details and required
+secrets.
+
 ## Advanced Configuration
 
 ### Media Directories
@@ -196,7 +233,6 @@ Here's a complete configuration:
   "media_directories": [".media", "images"]
 }
 ```
-
 The `docs_path` field defaults to `"docs"` and may be omitted when the documentation lives in a `docs/` directory.
 
 ## Troubleshooting

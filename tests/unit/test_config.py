@@ -324,8 +324,8 @@ class TestSaveConfig:
 
         assert "ref" not in data["repos"][0]
 
-    def test_save_omits_default_docs_path(self, tmp_path):
-        """Test that docs_path='docs' is not written to the JSON output."""
+    def test_save_writes_docs_path(self, tmp_path):
+        """Test that docs_path is always written to the JSON output."""
         repos = [
             RepoConfig(
                 name="test-repo",
@@ -342,7 +342,7 @@ class TestSaveConfig:
         with open(config_file) as f:
             data = json.load(f)
 
-        assert "docs_path" not in data["repos"][0]
+        assert data["repos"][0]["docs_path"] == "docs"
 
     def test_save_preserves_nondefault_docs_path(self, tmp_path):
         """Test that a non-default docs_path is preserved in JSON output."""
@@ -405,3 +405,83 @@ class TestSaveConfig:
             data = json.load(f)
 
         assert data["repos"][0]["media_directories"] == ["images"]
+
+    def test_save_preserves_docs_paths(self, tmp_path):
+        """Test that an explicit docs_paths override survives a save/load round trip."""
+        repos = [
+            RepoConfig(
+                name="test-repo",
+                url="https://github.com/test/repo",
+                docs_path="docs",
+                target_path="projects/test",
+                ref="main",
+                docs_paths=["docs/**", "README.md"],
+            )
+        ]
+        config_file = tmp_path / "config.json"
+
+        save_config(str(config_file), repos)
+
+        with open(config_file) as f:
+            data = json.load(f)
+        assert data["repos"][0]["docs_paths"] == ["docs/**", "README.md"]
+
+        loaded_repos = load_config(str(config_file))
+        assert loaded_repos[0].docs_paths == ["docs/**", "README.md"]
+
+    def test_save_omits_empty_docs_paths(self, tmp_path):
+        """Test that an empty docs_paths is omitted from JSON output."""
+        repos = [
+            RepoConfig(
+                name="test-repo",
+                url="https://github.com/test/repo",
+                docs_path="docs",
+                target_path="projects/test",
+                ref="main",
+            )
+        ]
+        config_file = tmp_path / "config.json"
+
+        save_config(str(config_file), repos)
+
+        with open(config_file) as f:
+            data = json.load(f)
+        assert "docs_paths" not in data["repos"][0]
+
+
+class TestResolvedDocsPaths:
+    """Tests for RepoConfig.resolved_docs_paths."""
+
+    def test_derives_from_docs_path_and_root_files(self):
+        repo = RepoConfig(
+            name="test-repo",
+            url="https://github.com/test/repo",
+            docs_path="docs",
+            ref="main",
+            root_files=["CONTRIBUTING.md", "SECURITY.md"],
+        )
+        assert repo.resolved_docs_paths == [
+            "docs/**",
+            "CONTRIBUTING.md",
+            "SECURITY.md",
+        ]
+
+    def test_explicit_override_takes_precedence(self):
+        repo = RepoConfig(
+            name="test-repo",
+            url="https://github.com/test/repo",
+            docs_path="docs",
+            ref="main",
+            root_files=["CONTRIBUTING.md"],
+            docs_paths=["docs/**", "README.md"],
+        )
+        assert repo.resolved_docs_paths == ["docs/**", "README.md"]
+
+    def test_default_docs_path(self):
+        repo = RepoConfig(
+            name="test-repo",
+            url="https://github.com/test/repo",
+            docs_path="docs",
+            ref="main",
+        )
+        assert repo.resolved_docs_paths == ["docs/**"]
