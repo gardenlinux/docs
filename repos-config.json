@@ -6,7 +6,6 @@
       "docs_path": "docs",
       "ref": "main",
       "commit": "2c8c0edebb39ab5bef10c06fbf7917d6203f1ef3",
-
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -74,7 +73,7 @@
       "url": "https://github.com/gardenlinux/daily",
       "docs_path": "docs",
       "ref": "gh-pages",
-      "commit": "83777d6e3a1146482f8c2aa05a4c8fcab072ede0",
+      "commit": "c8c696f993e5e5e835bbeb2a353a440dc3115cab",
       "docs_paths": [
         "docs/**",
         ".github/workflows/docs-check.yml",
