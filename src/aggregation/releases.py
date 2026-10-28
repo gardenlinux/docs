@@ -13,7 +13,52 @@ import sys
 from pathlib import Path
 
 from .constants import COMMITS_URL, GANTT_THEME, LIFECYCLE_LINKS
-from .glrd import get_active_minor_versions, run_glrd_json
+from .glrd import run_glrd_json
+
+
+def _version_str(version_obj: dict) -> str | None:
+    """Normalize a GLRD version object to ``{major}.{minor}[.{patch}]``."""
+    if "major" not in version_obj:
+        return None
+    if "minor" in version_obj:
+        if "patch" in version_obj:
+            return (
+                f"{version_obj['major']}.{version_obj['minor']}.{version_obj['patch']}"
+            )
+        return f"{version_obj['major']}.{version_obj['minor']}"
+    return str(version_obj["major"])
+
+
+def _select_active_releases(releases_data: dict, active_versions: set[str]) -> dict:
+    """Filter full GLRD data down to the rows belonging to the maintained page.
+
+    Major rows are kept when their major is represented in *active_versions*;
+    minor rows are kept when their normalized version string is in
+    *active_versions*.  This lets the maintained table include a fallback minor
+    (e.g. ``2150.13.0``) that GLRD itself no longer reports as active.
+    """
+    active_majors = {version.split(".")[0] for version in active_versions}
+    selected = []
+    for release in releases_data.get("releases", []):
+        version_obj = release.get("version", {})
+        if "minor" in version_obj:
+            if _version_str(version_obj) in active_versions:
+                selected.append(release)
+        elif "major" in version_obj:
+            if str(version_obj["major"]) in active_majors:
+                selected.append(release)
+    return {"releases": selected}
+
+
+def _exclude_active_releases(releases_data: dict, active_versions: set[str]) -> dict:
+    """Drop minor rows that belong to the maintained page from archived data."""
+    kept = []
+    for release in releases_data.get("releases", []):
+        version_obj = release.get("version", {})
+        if "minor" in version_obj and _version_str(version_obj) in active_versions:
+            continue
+        kept.append(release)
+    return {"releases": kept}
 
 
 def format_version(release: dict, active_versions: set[str]) -> tuple[str, str]:
@@ -239,12 +284,18 @@ def append_release_page(
 """
 
 
-def generate_release_docs(docs_dir: Path, existing_gh_tags: set[str]) -> bool:
+def generate_release_docs(
+    docs_dir: Path,
+    existing_gh_tags: set[str],
+    active_versions: set[str],
+) -> bool:
     """Fetch release data from GLRD and generate release documentation pages.
 
     GLRD minor releases are only included in the generated tables when a
     matching GitHub release tag exists in *existing_gh_tags* (see
-    :func:`generate_release_table`).
+    :func:`generate_release_table`).  The maintained page shows the releases in
+    *active_versions*, which the caller resolves from GLRD's active versions
+    falling back to the newest release that also exists on GitHub.
 
     Args:
         docs_dir: Root of the VitePress ``docs/`` tree.
@@ -252,25 +303,28 @@ def generate_release_docs(docs_dir: Path, existing_gh_tags: set[str]) -> bool:
             stripped.  Built from the full list fetched by the caller
             (``aggregate.py``) via
             :func:`aggregation.github_api.list_repo_releases`.
+        active_versions: Effective active minor version strings used to build the
+            maintained table and to route release-notes links.
     """
     releases_dir = docs_dir / "reference" / "releases"
     releases_dir.mkdir(parents=True, exist_ok=True)
 
     print("Generating release documentation from GLRD...")
 
-    # Get active minor versions for correct link generation
-    active_versions = get_active_minor_versions()
-    print(f"  Found {len(active_versions)} active minor versions")
-
-    active_data = run_glrd_json(["--active"])
+    # Full GLRD data is needed so the maintained table can include a fallback
+    # minor (e.g. 2150.13.0) that GLRD no longer reports via '--active'.
+    all_data = run_glrd_json([])
     archived_data = run_glrd_json(["--archived"])
 
-    if active_data is None:
+    if all_data is None:
         print(
             "Warning: Could not fetch active releases - skipping generation",
             file=sys.stderr,
         )
         return False
+
+    active_data = _select_active_releases(all_data, active_versions)
+    print(f"  Found {len(active_versions)} active minor versions")
 
     active_table = generate_release_table(
         active_data, active_versions, existing_gh_tags
@@ -319,6 +373,9 @@ def generate_release_docs(docs_dir: Path, existing_gh_tags: set[str]) -> bool:
     print(f"  Updated: {release_path}")
 
     if archived_data is not None:
+        # Effective active versions belong to the maintained page; drop them
+        # from the archived data so they are not listed on both pages.
+        archived_data = _exclude_active_releases(archived_data, active_versions)
         archived_table = generate_release_table(
             archived_data, active_versions, existing_gh_tags
         )
