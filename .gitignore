@@ -22,6 +22,7 @@ docs/contributing/**
 !docs/contributing/documentation_workflow.md
 docs/explanation/**
 !docs/explanation/index.md
+!docs/explanation/history.md
 !docs/explanation/documentation/
 !docs/explanation/documentation/**
 docs/how-to/**
