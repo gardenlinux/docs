@@ -67,8 +67,8 @@ replaced without any manual intervention.
 
 | Date | Type | Event | First released in |
 |---|---|---|---|
-| Jun 2018 | External Event | **CoreOS announces Container Linux end-of-life** — CoreOS announces via the [coreos-user mailing list](https://groups.google.com/forum/#!msg/coreos-user/zgqkG88DS3U/PFP9yrKbAgAJ) that Container Linux will be replaced by Fedora CoreOS. | - |
-| Feb 2020 | External Event | **CoreOS declares Container Linux EOL** — CoreOS announces via the [coreos-user mailing list](https://groups.google.com/forum/#!msg/coreos-user/xM9TOqpwoWc/b-ciVxtjAwAJ) that Container Linux will reach end of life on 26 May 2020. | - |
+| Jun 2018 | External Event | **CoreOS announces Container Linux end-of-life** — CoreOS announces via the [coreos-user mailing list](https://groups.google.com/g/coreos-user/c/zgqkG88DS3U/m/PFP9yrKbAgAJ) that Container Linux will be replaced by Fedora CoreOS. | - |
+| Feb 2020 | External Event | **CoreOS declares Container Linux EOL** — CoreOS announces via the [coreos-user mailing list](https://groups.google.com/g/coreos-user/c/xM9TOqpwoWc/m/b-ciVxtjAwAJ) that Container Linux will reach end of life on 26 May 2020. | - |
 | Mar 2020 | External Event | **Google announces Container Linux EOL on GCP** — Google announces that all Container Linux versions on Compute Engine will be unsupported from 26 May 2020 and unavailable for new VM instances thereafter. | - |
 | Mar 2020 | External Event | **AWS announces Bottlerocket** — AWS publishes [Bottlerocket](https://aws.amazon.com/bottlerocket/), a new open-source container host OS, as a Container Linux replacement. | - |
 | Mar 2020 | Announcement | **Garden Linux announced** — the SAP Gardener team announces Garden Linux _internally_ as a strategic countermeasure to the Container Linux end-of-life. | - |
