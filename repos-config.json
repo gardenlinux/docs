@@ -4,9 +4,8 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "docs_path": "docs",
-      "ref": "main",
-      "commit": "2c8c0edebb39ab5bef10c06fbf7917d6203f1ef3",
-
+      "ref": "doc/in-place-updates",
+      "commit": "46a0be4b58f6f7a2fcb6f4a8c94ab1074e49b6a2",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
