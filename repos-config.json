@@ -6,7 +6,6 @@
       "docs_path": "docs",
       "ref": "main",
       "commit": "2c8c0edebb39ab5bef10c06fbf7917d6203f1ef3",
-
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -20,7 +19,7 @@
       "url": "https://github.com/gardenlinux/builder",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "61ae6c9ff38e0892228ccb3f52ac2e2d3548b12b"
+      "commit": "b010b304c15d3db1edbbf3f792656c88beb2e1a8"
     },
     {
       "name": "python-gardenlinux-lib",
