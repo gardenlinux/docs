@@ -16,6 +16,7 @@ export function generateDocumentationSidebar(): any {
     sortMenusByFrontmatterOrder: true,
     frontmatterOrderDefaultValue: 999,
     prefixSeparator: '/',
+    excludeFilesByFrontmatterFieldName: 'exclude',
   }]);
   
   // Post-process sidebar to fix folder titles and extract descriptions from frontmatter

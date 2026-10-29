@@ -91,6 +91,81 @@ def format_release_entry(release: dict) -> str:
     return f"{header}{body.strip()}\n"
 
 
+def render_release_page(
+    tag_name: str,
+    date: str,
+    release_order: int,
+    content: str,
+) -> str:
+    """Render the full markdown page for a single release note."""
+    return f"""---
+title: "Release {tag_name}"
+description: "Release notes for Garden Linux {tag_name}, published at {date}."
+order: {release_order}
+editLink: false
+related_topics:
+  - /reference/releases/release-lifecycle
+  - /reference/releases/maintained-releases
+  - /reference/releases/archived-releases
+  - /reference/releases/release-notes/
+---
+
+{content}
+
+## Related Topics
+
+<RelatedTopics />
+
+"""
+
+
+def render_redirect_page(
+    tag_name: str,
+    date: str,
+    release_order: int,
+    target: str,
+) -> str:
+    """Render a contentless top-level alias page that forwards to ``target``.
+
+    Archived releases keep a stable URL at the top-level release-notes path.
+    The alias is a real VitePress route (so in-site links resolve instead of
+    hitting a client-side 404, and the archived sidebar entry is selected) but
+    carries no release content.  A client-side redirect covers in-site (SPA)
+    navigation, while the ``head`` meta refresh covers loads without
+    JavaScript.  ``target`` is relative to the alias page, so it works
+    regardless of the configured ``base`` path.
+    """
+    return f"""---
+title: "Release {tag_name}"
+description: "Release notes for Garden Linux {tag_name}, published at {date}."
+order: {release_order}
+editLink: false
+exclude: true
+head:
+  - - meta
+    - http-equiv: refresh
+      content: "0; url={target}"
+---
+
+<script setup>
+import {{ onMounted }} from 'vue'
+import {{ useData }} from 'vitepress'
+
+const {{ site }} = useData()
+
+onMounted(() => {{
+  window.location.replace(
+    site.value.base + 'reference/releases/release-notes/{target}'
+  )
+}})
+</script>
+
+# Release {tag_name}
+
+The release notes have moved to the [archived release notes]({target}).
+"""
+
+
 def generate_release_notes_docs(
     docs_dir: Path,
     releases: list[dict],
@@ -171,36 +246,32 @@ def generate_release_notes_docs(
         # Order: highest version = 1, second = 2, etc.
         release_order = idx + 1
 
-        page_content = f"""---
-title: "Release {tag_name}"
-description: "Release notes for Garden Linux {tag_name}, published at {date}."
-order: {release_order}
-editLink: false
-related_topics:
-  - /reference/releases/release-lifecycle
-  - /reference/releases/maintained-releases
-  - /reference/releases/archived-releases
-  - /reference/releases/release-notes/
----
-
-{content}
-
-## Related Topics
-
-<RelatedTopics />
-
-"""
-
         # Create filename from tag
         filename = tag_name.replace(".", "-") + ".md"
 
-        # Route to appropriate directory based on archive status
+        # Route to appropriate directory based on archive status.
         if is_archived:
+            # Archived release notes stay under archived/ (still listed there),
+            # while a contentless alias at the top level forwards a stable URL
+            # without `archived/` to the archived page.
             filepath = archived_dir / filename
+            filepath.write_text(
+                render_release_page(tag_name, date, release_order, content)
+            )
+            alias_path = releases_dir / filename
+            alias_path.write_text(
+                render_redirect_page(
+                    tag_name,
+                    date,
+                    release_order,
+                    f"{ARCHIVED_DIR}/{tag_name.replace('.', '-')}.html",
+                )
+            )
         else:
             filepath = releases_dir / filename
-
-        filepath.write_text(page_content)
+            filepath.write_text(
+                render_release_page(tag_name, date, release_order, content)
+            )
 
         release_list.append(
             {
@@ -212,6 +283,8 @@ related_topics:
             }
         )
         print(f"  Created: {filepath.relative_to(docs_dir)}")
+        if is_archived:
+            print(f"  Created: {alias_path.relative_to(docs_dir)}")
 
     print("Release notes generation complete.")
     return True
