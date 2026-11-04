@@ -5,7 +5,7 @@
       "url": "https://github.com/gardenlinux/gardenlinux",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "2c8c0edebb39ab5bef10c06fbf7917d6203f1ef3",
+      "commit": "edfd5108f987d8f5c57ec07919effa89da659df0",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
@@ -26,7 +26,7 @@
       "url": "https://github.com/gardenlinux/python-gardenlinux-lib",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "4da13c46b04d531d0bccfb5cb882f8581564af3b",
+      "commit": "af1bb0ca2dfe2473670e6c8e3116f82eb114dddf",
       "structure": "sphinx",
       "target_map": {
         "cli.md": "reference/python-gardenlinux-lib-cli.md",
@@ -38,49 +38,49 @@
       "url": "https://github.com/gardenlinux/package-linux",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "39d7639fdaceb3249732eaf8286898a011067600"
+      "commit": "63cecc2404bc5525cd2d769ef05adc731f69b7df"
     },
     {
       "name": "package-build",
       "url": "https://github.com/gardenlinux/package-build",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "4ab74ba588be9b9fd070941ec959e22e9b11d2c2"
+      "commit": "a9cd164016d4c591ac150b292cf3735854614838"
     },
     {
       "name": "repo",
       "url": "https://github.com/gardenlinux/repo",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "2f987425f6406a4722c9276b23c3dd9f0a467604"
+      "commit": "3ee28fdb7dd83371ef41b962fb6b48e7336d3972"
     },
     {
       "name": "glrd",
       "url": "https://github.com/gardenlinux/glrd",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "9af61e86b22635588b57765342fb54fedc1d05e0"
+      "commit": "f07170a4765a8b26f10ed8b767899a6f1d51deac"
     },
     {
       "name": "gardenlinux-nvidia-installer",
       "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "7dd97a72be5e54cd8ba2e531c32c3a56e2e07fa0"
+      "commit": "79d20ffb0c4b352b9644fc4f1df2496f521fbf7f"
     },
     {
       "name": "glci",
       "url": "https://github.com/gardenlinux/glci",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "9e3f5eb072cbe7c2888a540249e10ff650bf2792"
+      "commit": "ed2e521c41ae061d6970d6807eeef63ff0ab2a67"
     },
     {
       "name": "daily",
       "url": "https://github.com/gardenlinux/daily",
       "docs_path": "docs",
       "ref": "gh-pages",
-      "commit": "83777d6e3a1146482f8c2aa05a4c8fcab072ede0",
+      "commit": "fbff838037a8cd7830d886a8845e51bcabae496f",
       "docs_paths": [
         "docs/**",
         ".github/workflows/docs-check.yml",
