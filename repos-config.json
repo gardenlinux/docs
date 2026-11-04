@@ -69,6 +69,13 @@
       "commit": "7dd97a72be5e54cd8ba2e531c32c3a56e2e07fa0"
     },
     {
+      "name": "glci",
+      "url": "https://github.com/gardenlinux/glci",
+      "docs_path": "docs",
+      "ref": "main",
+      "commit": "9e3f5eb072cbe7c2888a540249e10ff650bf2792"
+    },
+    {
       "name": "daily",
       "url": "https://github.com/gardenlinux/daily",
       "docs_path": "docs",
