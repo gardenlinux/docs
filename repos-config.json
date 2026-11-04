@@ -80,6 +80,13 @@
         "README.md",
         "DEVELOPER.md"
       ]
-    }
+    },
+    {
+      "name": "glci",
+      "url": "https://github.com/gardenlinux/glci",
+      "docs_path": "docs",
+      "ref": "main",
+      "commit": "9e3f5eb072cbe7c2888a540249e10ff650bf2792"
+    },
   ]
 }
