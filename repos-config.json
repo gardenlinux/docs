@@ -73,7 +73,7 @@
       "url": "https://github.com/gardenlinux/daily",
       "docs_path": "docs",
       "ref": "gh-pages",
-      "commit": "83777d6e3a1146482f8c2aa05a4c8fcab072ede0",
+      "commit": "fbff838037a8cd7830d886a8845e51bcabae496f",
       "docs_paths": [
         "docs/**",
         ".github/workflows/docs-check.yml",
