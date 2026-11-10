@@ -13,6 +13,117 @@ GITHUB_COMMITS_URL = "https://github.com/gardenlinux/gardenlinux/commit"
 # Configuration
 ARCHIVED_DIR = "archived"
 
+EMOJI_RE = re.compile("[\U0001f000-\U0001faff\u2300-\u23ff\u2600-\u27bf\u2b00-\u2bff]")
+LEGACY_EMOJI_REPLACEMENTS = (
+    ("📊 Table View", "Table View"),
+    ("📝 Detailed View", "Detailed View"),
+)
+ATX_HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.*)$")
+FENCE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})(.*)$")
+
+
+def _strip_emoji(line: str) -> str:
+    """Remove emoji from a line, preserving leading indentation."""
+    if not EMOJI_RE.search(line):
+        return line
+
+    leading = line[: len(line) - len(line.lstrip())]
+    content = line.lstrip()
+    if EMOJI_RE.match(content):
+        content = EMOJI_RE.sub("", content).lstrip()
+        return leading + content
+    return EMOJI_RE.sub("", line)
+
+
+def _has_h1_outside_fences(lines: list[str]) -> bool:
+    """Return whether the body contains a level-1 heading outside fences."""
+    fence_marker: str | None = None
+
+    for line in lines:
+        fence_match = FENCE_RE.match(line)
+        if fence_match:
+            marker = fence_match.group(2)
+            info = fence_match.group(3)
+            if fence_marker is None:
+                fence_marker = marker
+            elif (
+                not info.strip()
+                and marker[0] == fence_marker[0]
+                and len(marker) >= len(fence_marker)
+            ):
+                fence_marker = None
+            continue
+
+        if fence_marker is not None:
+            continue
+
+        heading_match = ATX_HEADING_RE.match(line)
+        if heading_match and len(heading_match.group(1)) == 1:
+            return True
+
+    return False
+
+
+def sanitize_release_note_body(body: str) -> str:
+    """Normalize release-note bodies for gldq and VitePress.
+
+    Removes legacy emoji, demotes body H1 headings below the generated page
+    title, prevents skipped heading levels, adds a language to unlabeled code
+    fences, and closes unclosed fences.
+    """
+    if not body:
+        return body
+
+    lines = body.splitlines()
+    shift = 1 if _has_h1_outside_fences(lines) else 0
+    sanitized: list[str] = []
+    fence_marker: str | None = None
+    fence_close: str | None = None
+    previous_heading = 1
+
+    for line in lines:
+        fence_match = FENCE_RE.match(line)
+        if fence_match:
+            indent, marker, info = fence_match.groups()
+            if fence_marker is None:
+                if not info.strip():
+                    line = f"{indent}{marker}text"
+                fence_marker = marker
+                fence_close = f"{indent}{marker}"
+            elif (
+                not info.strip()
+                and marker[0] == fence_marker[0]
+                and len(marker) >= len(fence_marker)
+            ):
+                fence_marker = None
+                fence_close = None
+
+            sanitized.append(line)
+            continue
+
+        if fence_marker is not None:
+            sanitized.append(line)
+            continue
+
+        for old, new in LEGACY_EMOJI_REPLACEMENTS:
+            line = line.replace(old, new)
+        line = _strip_emoji(line)
+
+        heading_match = ATX_HEADING_RE.match(line)
+        if heading_match:
+            original_level = len(heading_match.group(1))
+            shifted_level = min(6, original_level + shift)
+            level = max(2, min(shifted_level, previous_heading + 1))
+            line = f"{'#' * level} {heading_match.group(2)}"
+            previous_heading = level
+
+        sanitized.append(line)
+
+    if fence_marker is not None:
+        sanitized.append(fence_close or fence_marker)
+
+    return "\n".join(sanitized)
+
 
 def parse_version(tag: str) -> tuple:
     """Parse version string into comparable tuple for semantic versioning.
@@ -79,6 +190,7 @@ def format_release_entry(release: dict) -> str:
 
     # Clean up GitHub markdown for VitePress compatibility
     body = cleanup_github_markdown(body)
+    body = sanitize_release_note_body(body)
 
     # Header with Published, Commit, and GitHub Release
     header = f"## {name}\n"
