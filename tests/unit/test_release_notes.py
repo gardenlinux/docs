@@ -2,10 +2,13 @@
 
 from pathlib import Path
 
+import gldq
 from aggregation.release_notes import (
+    format_release_entry,
     generate_release_notes_docs,
     render_redirect_page,
     render_release_page,
+    sanitize_release_note_body,
 )
 
 
@@ -21,6 +24,115 @@ def _make_release(tag: str, name: str | None = None, draft: bool = False) -> dic
         "target_commitish": "92024ecb52a80dd0646705b8de828f09c1d81a64",
         "draft": draft,
     }
+
+
+class TestSanitizeReleaseNoteBody:
+    """sanitize_release_note_body normalizes legacy release-note content."""
+
+    def test_replaces_legacy_emoji_markers(self):
+        result = sanitize_release_note_body("📊 Table View\n\n📝 Detailed View\n")
+        assert "📊" not in result
+        assert "📝" not in result
+        assert result.splitlines() == ["Table View", "", "Detailed View"]
+
+    def test_strips_remaining_emoji(self):
+        result = sanitize_release_note_body("Status ✅\n")
+        assert "✅" not in result
+        assert "Status" in result
+
+    def test_demotes_h1_and_prevents_skipped_levels(self):
+        result = sanitize_release_note_body(
+            "# Changes\n\n### Deep\n\n# Published images\n"
+        )
+        lines = result.splitlines()
+        assert lines[0] == "## Changes"
+        assert lines[2] == "### Deep"
+        assert lines[4] == "## Published images"
+
+    def test_body_without_h1_starts_at_h2(self):
+        result = sanitize_release_note_body("### Deep\n\n#### Deeper\n")
+        lines = result.splitlines()
+        assert lines[0] == "## Deep"
+        assert lines[2] == "### Deeper"
+
+    def test_adds_language_to_unlabeled_fences(self):
+        result = sanitize_release_note_body("```\nfoo\n```\n")
+        assert result.splitlines() == ["```text", "foo", "```"]
+
+    def test_preserves_fenced_content(self):
+        result = sanitize_release_note_body(
+            "```text\n# Not a heading\n📊 Table View\n```\n"
+        )
+        assert result.splitlines()[0] == "```text"
+        assert "# Not a heading" in result
+        assert "📊 Table View" in result
+
+    def test_closes_unclosed_fence(self):
+        result = sanitize_release_note_body("```text\nunclosed\n")
+        assert result.splitlines() == ["```text", "unclosed", "```"]
+
+    def test_indented_unlabeled_fence_gets_language(self):
+        result = sanitize_release_note_body("  ```\n  foo\n  ```\n")
+        assert result.splitlines() == ["  ```text", "  foo", "  ```"]
+
+    def test_format_release_entry_sanitizes_body(self):
+        release = _make_release("2150.6.0")
+        release["body"] = "📊 Table View\n\n# Changes\n\n```\nfoo\n```\n"
+
+        result = format_release_entry(release)
+
+        assert "📊" not in result
+        assert "## Changes" in result
+        assert "```text" in result
+
+    def test_generated_release_page_passes_gldq(self, tmp_path):
+        release = _make_release("2150.6.0")
+        release["body"] = (
+            "📊 Table View\n\n"
+            "📝 Detailed View\n\n"
+            "# Changes\n\n"
+            "## Software Component Versions\n\n"
+            "```\ncontainerd 1.0\n```\n\n"
+            "```text\nunclosed\n"
+        )
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        assert generate_release_notes_docs(docs_dir, [release], set())
+
+        page = (
+            docs_dir
+            / "reference"
+            / "releases"
+            / "release-notes"
+            / "archived"
+            / "2150-6-0.md"
+        )
+        document = gldq.parse_document(page, docs_dir)
+        findings, _, _ = gldq.collect_findings([document], set())
+        rule_ids = {finding.rule_id for finding in findings}
+
+        for rule_id in (
+            "CODE-BALANCE",
+            "CODE-LANG",
+            "EMOJI",
+            "H1-ONE",
+            "HEAD-SKIP",
+            "RELATED-TOPICS-PRESENT",
+        ):
+            assert rule_id not in rule_ids
+
+    def test_redirect_alias_skips_related_topics_present(self, tmp_path):
+        docs_dir = tmp_path / "docs"
+        docs_dir.mkdir()
+        assert generate_release_notes_docs(
+            docs_dir, [_make_release("2150.13.0")], set()
+        )
+
+        alias = docs_dir / "reference" / "releases" / "release-notes" / "2150-13-0.md"
+        document = gldq.parse_document(alias, docs_dir)
+        findings, _, _ = gldq.collect_findings([document], set())
+
+        assert "RELATED-TOPICS-PRESENT" not in {finding.rule_id for finding in findings}
 
 
 class TestRenderReleasePage:
