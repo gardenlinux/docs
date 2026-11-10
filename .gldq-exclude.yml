@@ -1,0 +1,19 @@
+# Rule-aware exclusions for gldq.
+# Aggregated files cannot be edited in this repository.
+#
+# Syntax:
+#   exclude:
+#     - rules: ["EMOJI", "CODE-*"]   # rule wildcards; omit for all rules
+#       paths: ["docs/reference/**"]  # paths are relative to the repo or docs root
+exclude:
+  - rules:
+      - "FM-DESC"
+      - "RELATED-TOPICS-PRESENT"
+    paths:
+      - "docs/reference/adr/**"
+  - rules:
+      - "CODE-LANG"
+    paths:
+      - "docs/reference/adr/0014-enforce-pr-references-in-commits.md"
+      - "docs/reference/adr/0035-cname-flavor-artifact-naming.md"
+      - "docs/reference/adr/install.md"
