@@ -1,4 +1,4 @@
-.PHONY: help run build preview publish transform aggregate aggregate-repo aggregate-update-repo aggregate-repo-single aggregate-update-repo-single test-aggregate-local clean clean-projects clean-aggregated-git test test-unit test-integration check spelling linkcheck woke glossary glossary-check format check-system-deps
+.PHONY: help run build preview publish transform aggregate aggregate-repo aggregate-update-repo aggregate-repo-single aggregate-update-repo-single test-aggregate-local clean clean-projects clean-aggregated-git test test-unit test-integration check spelling linkcheck woke glossary glossary-check docs-check docs-check-strict format check-system-deps
 
 help:
 	@echo "Garden Linux Documentation Hub - Available targets:"
@@ -20,6 +20,8 @@ help:
 	@echo "    spelling               - Check spelling with codespell"
 	@echo "    linkcheck              - Check links with lychee"
 	@echo "    woke                   - Check inclusive language with woke"
+	@echo "    docs-check             - Run Garden Linux Docs Quality"
+	@echo "    docs-check-strict      - Run Garden Linux Docs Quality with warnings as errors"
 	@echo "    glossary               - Process glossary links in documentation"
 	@echo "    glossary-check         - Validate glossary structure"
 	@echo ""
@@ -149,6 +151,14 @@ linkcheck:
 woke:
 	@echo "Running inclusive language checks..."
 	@pnpm run docs:woke
+
+docs-check:
+	@echo "Running Garden Linux Docs Quality..."
+	@python3 src/gldq.py docs/
+
+docs-check-strict:
+	@echo "Running Garden Linux Docs Quality (strict)..."
+	@python3 src/gldq.py docs/ --strict
 
 glossary:
 	@echo "Processing glossary links..."
