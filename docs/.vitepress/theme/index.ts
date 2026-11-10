@@ -9,6 +9,7 @@ import RelatedTopics from './components/RelatedTopics.vue'
 import Carousel from './components/Carousel.vue'
 import VPFooter from './components/VPFooter.vue'
 import LinkPreviewProvider from './components/LinkPreviewProvider.vue'
+import { initAnalytics } from './utils/analytics'
 
 export default {
   extends: DefaultTheme,
@@ -37,9 +38,20 @@ export default {
       })
     })
   },
-  enhanceApp({ app }) {
+  async enhanceApp({ app, router }) {
     app.component('SectionIndex', SectionIndex)
     app.component('RelatedTopics', RelatedTopics)
     app.component('Carousel', Carousel)
+
+    // Plausible is browser-only; guard against SSR build (enhanceApp also runs in Node).
+    // Await init so the 404 hook is installed before the initial navigation runs.
+    // Swallow init failures so a rejected tracker import never blocks app mount.
+    if (!import.meta.env.SSR) {
+      try {
+        await initAnalytics(router)
+      } catch (err) {
+        console.error('[analytics] init failed:', err)
+      }
+    }
   },
 } satisfies Theme
