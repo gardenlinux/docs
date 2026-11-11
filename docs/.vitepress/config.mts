@@ -113,6 +113,8 @@ export default defineConfig({
         href: `${base}gardenlinux-logo.svg`,
       },
     ],
+    // Same-origin .ico: favicon crawlers (DuckDuckGo, used by Plausible) skip SVG icons
+    ["link", { rel: "icon", href: `${base}gardenlinux-logo.ico`, sizes: "32x32" }],
     ["meta", { name: "theme-color", content: "#009f76" }],
     ["meta", { property: "og:type", content: "website" }],
     ["meta", { property: "og:site_name", content: "Garden Linux" }],

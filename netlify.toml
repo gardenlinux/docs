@@ -6,3 +6,11 @@ publish = "docs/.vitepress/dist"
 NODE_VERSION = "22"
 PYTHON_VERSION = "3.13"
 
+# Proxy Plausible event endpoint through our own domain to avoid adblockers.
+# https://plausible.io/docs/proxy/guides/netlify
+[[redirects]]
+from = "/pa/event"
+to = "https://plausible.io/api/event"
+status = 200
+force = true
+
