@@ -4,8 +4,8 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "docs_path": "docs",
-      "ref": "main",
-      "commit": "cf20c2ca5f8c8ff77d34ddc800d6ef65783d989c",
+      "ref": "fix/test_coverage_on_feature_change",
+      "commit": "0cabaf6a760df3e42c83bb25a4fc54fefcada421",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
