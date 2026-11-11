@@ -16,6 +16,9 @@ hero:
     - theme: alt
       text: Releases
       link: /reference/releases/maintained-releases
+    - theme: alt
+      text: Community
+      link: /community/
   image:
     src: /gardenlinux-logo.svg
     alt: Garden Linux Logo
