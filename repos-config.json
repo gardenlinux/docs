@@ -4,8 +4,8 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "docs_path": "docs",
-      "ref": "main",
-      "commit": "3b071a920a885c92c0914a964c9495c271caf5e1",
+      "ref": "adr/ubuntu-runner-images",
+      "commit": "c3ac8f0d666e5ffe8b30569d01a168be0ce2f755",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
