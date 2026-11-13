@@ -79,8 +79,8 @@
       "name": "daily",
       "url": "https://github.com/gardenlinux/daily",
       "docs_path": "docs",
-      "ref": "gh-pages",
-      "commit": "83777d6e3a1146482f8c2aa05a4c8fcab072ede0",
+      "ref": "fix/broken-docs-links",
+      "commit": "91ef3dc8a7c27be5710d69c8f6a4f9439f3ea042",
       "docs_paths": [
         "docs/**",
         ".github/workflows/docs-check.yml",
