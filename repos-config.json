@@ -51,8 +51,8 @@
       "name": "repo",
       "url": "https://github.com/gardenlinux/repo",
       "docs_path": "docs",
-      "ref": "main",
-      "commit": "2f987425f6406a4722c9276b23c3dd9f0a467604"
+      "ref": "fix/apt-repos-doc-wrong-workflow",
+      "commit": "94033cc570df73d3059740ba9f11a57ac043d43d"
     },
     {
       "name": "glrd",
