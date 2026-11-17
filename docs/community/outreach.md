@@ -15,7 +15,7 @@ This page is part of the [Community overview](./index.md). See also the
 
 ::: info Draft page
 This page is a draft. Entries marked **Placeholder** still need a final,
-confirmed link or schedule before this page is published.
+link or schedule before this page is published.
 :::
 
 <div class="community-grid">
