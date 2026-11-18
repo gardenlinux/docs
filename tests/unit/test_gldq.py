@@ -725,6 +725,9 @@ class TestCli:
         output = capsys.readouterr().out
         assert "FM-YAML" in output
         assert "RELATED-TOPICS-PRESENT" in output
+        assert "CALLOUT-INVALID-TYPE" in output
+        assert "CALLOUT-GITHUB-STYLE" in output
+        assert "CALLOUT-UNCLOSED" in output
 
     def test_missing_path_returns_usage_error(self, tmp_path, capsys):
         assert gldq.main([str(tmp_path / "missing"), "--no-exclude-file"]) == 2
@@ -746,3 +749,107 @@ class TestCli:
             ),
         )
         assert gldq.main([str(path), "--no-exclude-file"]) == 0
+
+
+class TestCallouts:
+    """Tests for VitePress container callout validation."""
+
+    @staticmethod
+    def callout_ids(findings: list[gldq.Finding]) -> list[str]:
+        """Return only CALLOUT rule IDs from findings."""
+        return [rule for rule in rule_ids(findings) if rule.startswith("CALLOUT")]
+
+    def test_valid_containers_pass(self, tmp_path):
+        content = make_doc(
+            "# Page\n\n"
+            ":::tip\nAdvice\n:::\n\n"
+            "::: info\nInformation\n:::\n\n"
+            "::: tip Spaced\nAdvice\n:::\n\n"
+            "::: details Click to expand\nDetails\n:::\n\n"
+            ":::warning\nCaveat\n:::\n\n"
+            ":::danger\nCritical\n:::\n"
+        )
+        assert self.callout_ids(find(tmp_path, content)) == []
+
+    def test_false_friends_are_errors(self, tmp_path):
+        content = make_doc(
+            "# Page\n\n"
+            ":::note\nNote\n:::\n\n"
+            ":::important\nImportant\n:::\n\n"
+            ":::success\nSuccess\n:::\n\n"
+            "::: error\nError\n:::\n"
+        )
+        ids = self.callout_ids(find(tmp_path, content))
+        assert ids.count("CALLOUT-INVALID-TYPE") == 4
+
+    def test_github_style_callouts_are_errors(self, tmp_path):
+        content = make_doc(
+            "# Page\n\n"
+            "> [!NOTE]\n"
+            "> Text\n\n"
+            "> [!IMPORTANT]\n"
+            "> Text\n\n"
+            "  > [!WARNING]  \n"
+        )
+        ids = self.callout_ids(find(tmp_path, content))
+        assert ids.count("CALLOUT-GITHUB-STYLE") == 3
+
+    def test_fenced_examples_are_ignored(self, tmp_path):
+        content = make_doc(
+            "# Page\n\n"
+            "```markdown\n"
+            ":::note\n"
+            "> [!NOTE]\n"
+            ":::\n"
+            "```\n"
+        )
+        assert self.callout_ids(find(tmp_path, content)) == []
+
+    def test_indented_container_in_list_passes(self, tmp_path):
+        content = make_doc(
+            "# Page\n\n"
+            "- item\n\n"
+            "  ::: tip\n"
+            "  Advice\n"
+            "  :::\n"
+        )
+        assert self.callout_ids(find(tmp_path, content)) == []
+
+    def test_nested_containers_balance(self, tmp_path):
+        content = make_doc(
+            "# Page\n\n"
+            "::: details\n"
+            "Outer\n\n"
+            ":::: tip\n"
+            "Inner\n"
+            "::::\n\n"
+            ":::\n"
+        )
+        assert "CALLOUT-UNCLOSED" not in self.callout_ids(find(tmp_path, content))
+
+    def test_unclosed_container_is_an_error(self, tmp_path):
+        content = make_doc("# Page\n\n:::tip\nAdvice\n")
+        findings = [
+            finding
+            for finding in find(tmp_path, content)
+            if finding.rule_id == "CALLOUT-UNCLOSED"
+        ]
+        assert len(findings) == 1
+        assert findings[0].line == 8
+
+    def test_suppression_comment_is_honored(self, tmp_path):
+        content = make_doc(
+            "# Page\n\n"
+            "<!-- gldq: disable-next-line CALLOUT-GITHUB-STYLE -->\n"
+            "> [!NOTE]\n"
+            "> Text\n"
+        )
+        assert "CALLOUT-GITHUB-STYLE" not in self.callout_ids(find(tmp_path, content))
+
+    def test_path_matches_wildcard_and_dot_prefix(self):
+        assert gldq._path_matches(
+            "reference/features/a.md", "./reference/features/**"
+        )
+        assert not gldq._path_matches(
+            "docs/reference/other/a.md", "./reference/features/**"
+        )

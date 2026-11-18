@@ -64,6 +64,13 @@ SUPPRESSION_RE = re.compile(
 )
 DEFAULT_EXCLUDE_FILE = Path(".gldq-exclude.yml")
 
+VITEPRESS_CALLOUT_TYPES = {"info", "tip", "warning", "danger", "details"}
+CALLOUT_OPEN_RE = re.compile(r"^\s*(:{3,})\s*([A-Za-z][A-Za-z0-9_-]*)\b(.*)$")
+CALLOUT_CLOSE_RE = re.compile(r"^\s*(:{3,})\s*$")
+GITHUB_CALLOUT_RE = re.compile(
+    r"^\s*>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$", re.IGNORECASE
+)
+
 
 @dataclass(frozen=True)
 class RuleInfo:
@@ -121,6 +128,21 @@ RULES: dict[str, RuleInfo] = {
         "RELATED-TOPICS-PRESENT",
         WARNING,
         "Non-index pages should include <RelatedTopics />",
+    ),
+    "CALLOUT-INVALID-TYPE": RuleInfo(
+        "CALLOUT-INVALID-TYPE",
+        ERROR,
+        "Invalid VitePress container type; use info, tip, warning, danger, or details",
+    ),
+    "CALLOUT-GITHUB-STYLE": RuleInfo(
+        "CALLOUT-GITHUB-STYLE",
+        ERROR,
+        "GitHub-style callouts are not supported; use VitePress ::: syntax",
+    ),
+    "CALLOUT-UNCLOSED": RuleInfo(
+        "CALLOUT-UNCLOSED",
+        ERROR,
+        "VitePress container is not closed with :::",
     ),
 }
 
@@ -267,7 +289,6 @@ class Document:
 def _first_line(text: str) -> str:
     return text.splitlines()[0] if text.splitlines() else str(text)
 
-
 def _parse_frontmatter(
     lines: Sequence[str],
 ) -> tuple[dict | None, str | None, bool, int]:
@@ -277,7 +298,7 @@ def _parse_frontmatter(
 
     end: int | None = None
     for index in range(1, len(lines)):
-        if lines[index].strip() in ("---", "..."):
+        if lines[index].strip() in ("---", "..."):  # Allow "..." as an alternative closing delimiter for front matter.
             end = index
             break
 
@@ -294,7 +315,6 @@ def _parse_frontmatter(
     if not isinstance(data, dict):
         return None, "Front matter must be a YAML mapping", True, end + 1
     return data, None, True, end + 1
-
 
 def _mask_html_comments(lines: Sequence[str]) -> list[str]:
     """Replace HTML comment content with spaces while preserving lines."""
@@ -332,7 +352,6 @@ def _mask_html_comments(lines: Sequence[str]) -> list[str]:
                     index = end + 3
         masked.append("".join(chars))
     return masked
-
 
 def _mask_inline_code(line: str) -> str:
     """Replace inline code spans with spaces."""
@@ -374,7 +393,6 @@ def _mask_inline_code(line: str) -> str:
 
     return "".join(chars)
 
-
 def _mask_fences(
     lines: Sequence[str], body_start: int
 ) -> tuple[list[str], list[Fence]]:
@@ -414,7 +432,6 @@ def _mask_fences(
 
     return masked, fences
 
-
 def _extract_headings(lines: Sequence[str], body_start: int) -> list[Heading]:
     """Extract ATX headings from masked lines."""
     headings: list[Heading] = []
@@ -426,11 +443,12 @@ def _extract_headings(lines: Sequence[str], body_start: int) -> list[Heading]:
         headings.append(Heading(line=index + 1, level=len(match.group(1)), text=text))
     return headings
 
-
 def _parse_suppressions(lines: Sequence[str]) -> Suppressions:
     """Parse gldq suppression comments."""
     suppressions = Suppressions()
-    for index, line in enumerate(lines, start=1):
+    for index in range(len(lines)):
+        line_number = index + 1
+        line = lines[index]
         for match in SUPPRESSION_RE.finditer(line):
             kind = match.group(1).lower()
             rules = {
@@ -443,12 +461,11 @@ def _parse_suppressions(lines: Sequence[str]) -> Suppressions:
             if kind == "disable-file":
                 suppressions.file_rules.update(rules)
             elif kind == "disable-next-line":
-                suppressions.next_line.setdefault(index + 1, set()).update(rules)
+                suppressions.next_line.setdefault(line_number + 1, set()).update(rules)
             else:
-                suppressions.from_line.append((index, rules))
+                suppressions.from_line.append((line_number, rules))
     suppressions.from_line.sort(key=lambda item: item[0])
     return suppressions
-
 
 def _path_matches(path_text: str, pattern: str) -> bool:
     """Match a POSIX path against a wildcard pattern."""
@@ -465,7 +482,6 @@ def _path_matches(path_text: str, pattern: str) -> bool:
     prefix = pattern.rstrip("/")
     return bool(prefix) and path_text.startswith(prefix + "/")
 
-
 def _string_list(value: object, path: Path, entry: int, field_name: str) -> list[str]:
     """Normalize a YAML string or list of strings."""
     if isinstance(value, str):
@@ -474,17 +490,16 @@ def _string_list(value: object, path: Path, entry: int, field_name: str) -> list
         values = value
     else:
         raise ValueError(
-            f"{path}: exclude entry {entry} field '{field_name}' "
+            f"{path}: exclude entry {entry} field \'{field_name}\' "
             "must be a string or a list of strings"
         )
 
     cleaned = [item.strip() for item in values if item.strip()]
     if not cleaned:
         raise ValueError(
-            f"{path}: exclude entry {entry} field '{field_name}' must not be empty"
+            f"{path}: exclude entry {entry} field \'{field_name}\' must not be empty"
         )
     return cleaned
-
 
 def load_exclude_file(path: Path) -> ExcludeConfig:
     """Load a rule-aware exclusion file."""
@@ -504,7 +519,7 @@ def load_exclude_file(path: Path) -> ExcludeConfig:
     if entries is None:
         return ExcludeConfig(path=path)
     if not isinstance(entries, list):
-        raise ValueError(f"{path}: 'exclude' must be a list")
+        raise ValueError(f"{path}: \'exclude\' must be a list")
 
     config = ExcludeConfig(path=path)
     for index, entry in enumerate(entries, start=1):
@@ -516,14 +531,14 @@ def load_exclude_file(path: Path) -> ExcludeConfig:
             rules_value = ["*"]
         paths_value = entry.get("paths")
         if paths_value is None:
-            raise ValueError(f"{path}: exclude entry {index} is missing 'paths'")
+            raise ValueError(f"{path}: exclude entry {index} is missing \'paths\'")
 
         rule_patterns = _string_list(rules_value, path, index, "rules")
         path_patterns = _string_list(paths_value, path, index, "paths")
 
         for pattern in rule_patterns:
             normalized = pattern.upper()
-            if not any(character in normalized for character in "*?["):
+            if not any(character in normalized for character in "*?[]"): 
                 if normalized not in RULES:
                     raise ValueError(
                         f"{path}: exclude entry {index} references unknown rule: "
@@ -539,7 +554,40 @@ def load_exclude_file(path: Path) -> ExcludeConfig:
         )
 
     return config
+def _infer_root(path: Path) -> Path:
+    """Infer the documentation root for a file or directory path."""
+    candidate = path if path.is_dir() else path.parent
+    for parent in (candidate, *candidate.parents):
+        if parent.name == "docs":
+            return parent
+    return candidate
+def _should_skip(file_path: Path, root: Path, excludes: Sequence[str]) -> bool:
+    """Return whether a path should be skipped."""
+    try:
+        relative = file_path.relative_to(root)
+    except ValueError:
+        relative = file_path
 
+    if any(part in SKIP_DIRS for part in relative.parts):
+        return True
+    if file_path.name.startswith("_"):
+        return True
+
+    relative_text = relative.as_posix()
+    full_text = file_path.as_posix()
+    for pattern in excludes:
+        cleaned = pattern.strip()
+        while cleaned.startswith("./"):
+            cleaned = cleaned[2:]
+        if not cleaned:
+            continue
+        if fnmatch.fnmatch(relative_text, cleaned):
+            return True
+        if fnmatch.fnmatch(full_text, cleaned):
+            return True
+        if relative_text.startswith(cleaned.rstrip("/") + "/"):
+            return True
+    return False
 
 def parse_document(path: Path, root: Path) -> Document:
     """Parse a markdown file into a Document."""
@@ -574,6 +622,60 @@ def parse_document(path: Path, root: Path) -> Document:
     )
 
 
+def iter_documents(
+    paths: Sequence[Path], excludes: Sequence[str]
+) -> Iterator[Document]:
+    """Yield parsed markdown documents for the given paths."""
+    seen: set[Path] = set()
+    for path in paths:
+        if path.is_dir():
+            root = path
+            candidates = sorted(path.rglob("*.md"))
+        else:
+            root = _infer_root(path)
+            candidates = [path]
+
+        for file_path in candidates:
+            if file_path.suffix.lower() != ".md":
+                continue
+            if _should_skip(file_path, root, excludes):
+                continue
+            resolved = file_path.resolve()
+            if resolved in seen:
+                continue
+            seen.add(resolved)
+            yield parse_document(file_path, root)
+
+
+def collect_findings(
+    documents: Sequence[Document],
+    disabled: set[str],
+    exclusions: ExcludeConfig | None = None,
+) -> tuple[list[Finding], int, int]:
+    """Run every check and apply suppressions and exclusions."""
+    if exclusions is None:
+        exclusions = ExcludeConfig()
+
+    findings: list[Finding] = []
+    suppressed = 0
+    excluded = 0
+
+    for document in documents:
+        for check in CHECKS:
+            for finding in check(document):
+                if finding.rule_id in disabled or document.suppressions.suppresses(
+                    finding.rule_id, finding.line
+                ):
+                    suppressed += 1
+                    continue
+                if exclusions.matches(finding.rule_id, document.path, document.root):
+                    excluded += 1
+                    continue
+                findings.append(finding)
+
+    findings.sort(key=lambda item: item.sort_key)
+    return findings, suppressed, excluded
+
 def _resolve_target(root: Path, reference: str) -> bool:
     """Resolve a related_topics reference against the docs root."""
     reference = reference.strip()
@@ -589,7 +691,7 @@ def _resolve_target(root: Path, reference: str) -> bool:
     reference = reference.lstrip("/")
     if not reference or reference == ".":
         return (root / "index.md").is_file()
-    if reference.endswith("/"):
+    if reference.endswith("/"): 
         return (root / reference / "index.md").is_file()
 
     candidates = [root / reference]
@@ -597,7 +699,6 @@ def _resolve_target(root: Path, reference: str) -> bool:
         candidates.append(root / f"{reference}.md")
         candidates.append(root / reference / "index.md")
     return any(candidate.is_file() for candidate in candidates)
-
 
 def _finding(
     document: Document,
@@ -615,7 +716,6 @@ def _finding(
         column=column,
         message=message,
     )
-
 
 def check_frontmatter(document: Document) -> Iterator[Finding]:
     """Check front matter structure and related topics."""
@@ -657,7 +757,7 @@ def check_frontmatter(document: Document) -> Iterator[Finding]:
                 "FM-ORDER",
                 1,
                 1,
-                "Front matter 'order' must be an integer",
+                "Front matter \'order\' must be an integer",
             )
 
     if "related_topics" in frontmatter:
@@ -668,7 +768,7 @@ def check_frontmatter(document: Document) -> Iterator[Finding]:
                 "FM-RELATED",
                 1,
                 1,
-                "Front matter 'related_topics' must be a list",
+                "Front matter \'related_topics\' must be a list",
             )
         else:
             for reference in related_topics:
@@ -678,7 +778,7 @@ def check_frontmatter(document: Document) -> Iterator[Finding]:
                         "FM-RELATED",
                         1,
                         1,
-                        "Front matter 'related_topics' entries must be non-empty strings",
+                        "Front matter \'related_topics\' entries must be non-empty strings",
                     )
                     continue
                 if not _resolve_target(document.root, reference):
@@ -689,7 +789,6 @@ def check_frontmatter(document: Document) -> Iterator[Finding]:
                         1,
                         f"related_topics target not found: {reference}",
                     )
-
 
 def check_headings(document: Document) -> Iterator[Finding]:
     """Check heading structure."""
@@ -724,7 +823,6 @@ def check_headings(document: Document) -> Iterator[Finding]:
             )
         previous = heading.level
 
-
 def check_code(document: Document) -> Iterator[Finding]:
     """Check fenced code block language and balance."""
     for fence in document.fences:
@@ -744,7 +842,6 @@ def check_code(document: Document) -> Iterator[Finding]:
                 1,
                 "Fenced code block is not closed",
             )
-
 
 def check_images(document: Document) -> Iterator[Finding]:
     """Check markdown and HTML image alt text."""
@@ -789,13 +886,11 @@ def check_images(document: Document) -> Iterator[Finding]:
                     "HTML image has empty alt text",
                 )
 
-
 def _normalize_link_text(text: str) -> str:
     text = re.sub(r"`+", "", text)
     text = re.sub(r"[*_~]", "", text)
     text = " ".join(text.split()).strip().lower()
     return text.strip(" .,:;!?()[]{}<>\"'")
-
 
 def check_links(document: Document) -> Iterator[Finding]:
     """Check for missing or generic link text."""
@@ -814,7 +909,6 @@ def check_links(document: Document) -> Iterator[Finding]:
                     f"Link text is not descriptive: {text!r}",
                 )
 
-
 def check_emoji(document: Document) -> Iterator[Finding]:
     """Check for emoji outside code fences and front matter."""
     for index in range(document.body_start, len(document.prose_lines)):
@@ -828,20 +922,17 @@ def check_emoji(document: Document) -> Iterator[Finding]:
                 f"Emoji outside code fence: {match.group(0)}",
             )
 
-
 def _first_line_with(lines: Sequence[str], needle: str) -> int | None:
     for index, line in enumerate(lines):
         if needle in line:
             return index + 1
     return None
 
-
 def _last_line_with(lines: Sequence[str], needle: str) -> int | None:
     for index in range(len(lines) - 1, -1, -1):
         if needle in lines[index]:
             return index + 1
     return None
-
 
 def check_components(document: Document) -> Iterator[Finding]:
     """Check VitePress component requirements."""
@@ -903,11 +994,10 @@ def check_components(document: Document) -> Iterator[Finding]:
                             1,
                             "<RelatedTopics /> must be the last content block",
                         )
-                        break
 
     if (
-        not document.is_index
-        and not document.is_home
+        not document.is_home
+        and not document.is_index
         and not document.is_excluded
         and not has_related_topics
     ):
@@ -916,7 +1006,55 @@ def check_components(document: Document) -> Iterator[Finding]:
             "RELATED-TOPICS-PRESENT",
             1,
             1,
-            "Content page is missing <RelatedTopics />",
+            "Non-index pages should include <RelatedTopics />",
+        )
+
+
+def check_callouts(document: Document) -> Iterator[Finding]:
+    """Check VitePress container callouts and reject unsupported syntax."""
+    stack: list[tuple[int, str, int]] = []
+
+    for index in range(document.body_start, len(document.no_fence_lines)):
+        line = document.no_fence_lines[index]
+        line_number = index + 1
+
+        if GITHUB_CALLOUT_RE.match(line):
+            yield _finding(
+                document,
+                "CALLOUT-GITHUB-STYLE",
+                line_number,
+                1,
+                "GitHub-style callouts are not supported; use VitePress ::: syntax",
+            )
+            continue
+
+        close_match = CALLOUT_CLOSE_RE.match(line)
+        if close_match and stack:
+            if len(close_match.group(1)) >= stack[-1][2]:
+                stack.pop()
+            continue
+
+        open_match = CALLOUT_OPEN_RE.match(line)
+        if open_match:
+            callout_type = open_match.group(2).lower()
+            if callout_type not in VITEPRESS_CALLOUT_TYPES:
+                yield _finding(
+                    document,
+                    "CALLOUT-INVALID-TYPE",
+                    line_number,
+                    1,
+                    "Invalid VitePress container type "
+                    f"{callout_type!r}; use info, tip, warning, danger, or details",
+                )
+            stack.append((line_number, callout_type, len(open_match.group(1))))
+
+    for line_number, _, _ in stack:
+        yield _finding(
+            document,
+            "CALLOUT-UNCLOSED",
+            line_number,
+            1,
+            "VitePress container is not closed with :::",
         )
 
 
@@ -929,89 +1067,9 @@ CHECKS.extend(
         check_links,
         check_emoji,
         check_components,
+        check_callouts,
     ]
 )
-
-
-def _should_skip(file_path: Path, root: Path, excludes: Sequence[str]) -> bool:
-    try:
-        relative = file_path.relative_to(root)
-    except ValueError:
-        relative = file_path
-
-    if any(part in SKIP_DIRS for part in relative.parts):
-        return True
-    if file_path.name.startswith("_"):
-        return True
-
-    relative_text = relative.as_posix()
-    full_text = file_path.as_posix()
-    for pattern in excludes:
-        cleaned = pattern.strip().lstrip("./")
-        if not cleaned:
-            continue
-        if fnmatch.fnmatch(relative_text, cleaned):
-            return True
-        if fnmatch.fnmatch(full_text, cleaned):
-            return True
-        if relative_text.startswith(cleaned.rstrip("/") + "/"):
-            return True
-    return False
-
-
-def _infer_root(path: Path) -> Path:
-    """Infer the documentation root for a file or directory path."""
-    candidate = path if path.is_dir() else path.parent
-    for parent in (candidate, *candidate.parents):
-        if parent.name == "docs":
-            return parent
-    return candidate
-
-
-def iter_documents(
-    paths: Sequence[Path], excludes: Sequence[str]
-) -> Iterator[Document]:
-    """Yield parsed documents for all markdown files under the given paths."""
-    for path in paths:
-        root = _infer_root(path)
-        if path.is_file():
-            if path.suffix.lower() == ".md":
-                yield parse_document(path, root)
-            continue
-
-        for file_path in sorted(path.rglob("*.md")):
-            if _should_skip(file_path, root, excludes):
-                continue
-            yield parse_document(file_path, root)
-
-
-def collect_findings(
-    documents: Sequence[Document],
-    disabled: set[str],
-    exclusions: ExcludeConfig | None = None,
-) -> tuple[list[Finding], int, int]:
-    """Run all checks and return findings, suppressed, and excluded counts."""
-    findings: list[Finding] = []
-    suppressed = 0
-    excluded = 0
-
-    for document in documents:
-        for check in CHECKS:
-            for finding in check(document):
-                if finding.rule_id in disabled or document.suppressions.suppresses(
-                    finding.rule_id, finding.line
-                ):
-                    suppressed += 1
-                    continue
-                if exclusions is not None and exclusions.matches(
-                    finding.rule_id, document.path, document.root
-                ):
-                    excluded += 1
-                    continue
-                findings.append(finding)
-
-    findings.sort(key=lambda finding: finding.sort_key)
-    return findings, suppressed, excluded
 
 
 def _counts(findings: Sequence[Finding]) -> tuple[int, int]:
@@ -1020,8 +1078,21 @@ def _counts(findings: Sequence[Finding]) -> tuple[int, int]:
     return errors, warnings
 
 
+def _escape_github(text: str) -> str:
+    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
 def _exclude_label(exclude_file: Path | None) -> str:
-    return exclude_file.as_posix() if exclude_file is not None else "exclude file"
+    return exclude_file.as_posix() if exclude_file else "exclude file"
+
+
+def _format_location(finding: Finding) -> str:
+    location = f"{finding.path}"
+    if finding.line is not None:
+        location += f":{finding.line}"
+        if finding.column is not None:
+            location += f":{finding.column}"
+    return location
 
 
 def format_text(
@@ -1032,29 +1103,23 @@ def format_text(
     exclude_file: Path | None = None,
 ) -> str:
     """Format findings as human-readable text."""
-    lines: list[str] = []
-    for finding in findings:
-        location = str(finding.path)
-        if finding.line is not None:
-            location += f":{finding.line}"
-            if finding.column is not None:
-                location += f":{finding.column}"
-        lines.append(
-            f"{location}: {finding.severity}: [{finding.rule_id}] {finding.message}"
-        )
+    lines = [
+        f"{_format_location(finding)}: {finding.severity} "
+        f"{finding.rule_id}: {finding.message}"
+        for finding in findings
+    ]
+    if not lines:
+        lines.append("No documentation quality findings.")
 
     errors, warnings = _counts(findings)
-    if lines:
-        lines.append("")
-    lines.append(
-        f"gldq: {errors} error(s), {warnings} warning(s) in {file_count} file(s)"
-    )
+    summary = f"{errors} error(s), {warnings} warning(s) in {file_count} file(s)"
     if suppressed:
-        lines.append(f"gldq: {suppressed} finding(s) suppressed inline")
+        summary += f", {suppressed} suppressed inline"
     if excluded:
-        lines.append(
-            f"gldq: {excluded} finding(s) excluded by {_exclude_label(exclude_file)}"
+        summary += (
+            f", {excluded} finding(s) excluded by {_exclude_label(exclude_file)}"
         )
+    lines.append(summary)
     return "\n".join(lines)
 
 
@@ -1069,35 +1134,29 @@ def format_json(
     errors, warnings = _counts(findings)
     payload = {
         "tool": "gldq",
-        "name": "Garden Linux Docs Quality",
         "version": __version__,
+        "name": "Garden Linux Docs Quality",
         "summary": {
             "files": file_count,
             "errors": errors,
             "warnings": warnings,
             "suppressed": suppressed,
             "excluded": excluded,
-            "exclude_file": (
-                exclude_file.as_posix() if exclude_file is not None else None
-            ),
+            "exclude_file": exclude_file.as_posix() if exclude_file else None,
         },
         "findings": [
             {
-                "path": str(finding.path),
+                "path": finding.path.as_posix(),
                 "line": finding.line,
                 "column": finding.column,
-                "severity": finding.severity,
                 "rule": finding.rule_id,
+                "severity": finding.severity,
                 "message": finding.message,
             }
             for finding in findings
         ],
     }
     return json.dumps(payload, indent=2)
-
-
-def _escape_github(text: str) -> str:
-    return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 
 
 def format_github(
@@ -1134,13 +1193,11 @@ def format_github(
     lines.append(summary)
     return "\n".join(lines)
 
-
 def print_rules() -> None:
     """Print the rule registry."""
     print(f"{'RULE':22} {'SEVERITY':8} DESCRIPTION")
     for rule in sorted(RULES.values(), key=lambda item: item.rule_id):
         print(f"{rule.rule_id:22} {rule.severity:8} {rule.description}")
-
 
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
@@ -1202,7 +1259,6 @@ def build_parser() -> argparse.ArgumentParser:
     )
     return parser
 
-
 def main(argv: Sequence[str] | None = None) -> int:
     """Run gldq and return an exit code."""
     parser = build_parser()
@@ -1223,7 +1279,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     unknown = disabled - set(RULES)
     if unknown:
         print(
-            f"gldq: unknown rule(s): {', '.join(sorted(unknown))}",
+            f"gldq: unknown rule(s): {','.join(sorted(unknown))}",
             file=sys.stderr,
         )
         return 2
