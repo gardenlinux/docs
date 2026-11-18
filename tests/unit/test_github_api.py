@@ -2,7 +2,6 @@
 
 import io
 import json
-import os
 import urllib.error
 import urllib.request
 from http.client import HTTPMessage
@@ -11,6 +10,18 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from aggregation.github_api import GitHubAPIError, get_json, list_repo_releases
+
+
+@pytest.fixture(autouse=True)
+def isolate_tokens(monkeypatch):
+    for variable in (
+        "GH_COM_TOKEN",
+        "GH_ENTERPRISE_HOST",
+        "GH_ENTERPRISE_TOKEN",
+        "GITHUB_TOKEN",
+    ):
+        monkeypatch.delenv(variable, raising=False)
+
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -54,7 +65,7 @@ class TestGetJson:
         payload = [{"tag_name": "1.0"}]
         mock_resp = _make_response(json.dumps(payload).encode())
 
-        with patch("urllib.request.urlopen", return_value=mock_resp):
+        with patch("aggregation.github_api._open_request", return_value=mock_resp):
             result = get_json("https://api.github.com/repos/x/y/releases")
 
         assert result == payload
@@ -69,7 +80,7 @@ class TestGetJson:
             captured_req["req"] = req
             return _make_response(b"[]")
 
-        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        with patch("aggregation.github_api._open_request", side_effect=fake_urlopen):
             get_json("https://api.github.com/test")
 
         assert "Authorization" not in captured_req["req"].headers
@@ -84,7 +95,7 @@ class TestGetJson:
             captured_req["req"] = req
             return _make_response(b"[]")
 
-        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        with patch("aggregation.github_api._open_request", side_effect=fake_urlopen):
             get_json("https://api.github.com/test")
 
         assert "Authorization" not in captured_req["req"].headers
@@ -99,14 +110,16 @@ class TestGetJson:
             captured_req["req"] = req
             return _make_response(b"[]")
 
-        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+        with patch("aggregation.github_api._open_request", side_effect=fake_urlopen):
             get_json("https://api.github.com/test")
 
         assert captured_req["req"].get_header("Authorization") == "Bearer ghp_testtoken"
 
     def test_raises_on_http_error(self):
         """HTTPError is wrapped in GitHubAPIError."""
-        with patch("urllib.request.urlopen", side_effect=_make_http_error(404)):
+        with patch(
+            "aggregation.github_api._open_request", side_effect=_make_http_error(404)
+        ):
             with pytest.raises(GitHubAPIError, match="HTTP 404"):
                 get_json("https://api.github.com/test")
 
@@ -116,21 +129,31 @@ class TestGetJson:
             403,
             {"X-RateLimit-Remaining": "0", "X-RateLimit-Reset": "1700000000"},
         )
-        with patch("urllib.request.urlopen", side_effect=err):
+        with patch("aggregation.github_api._open_request", side_effect=err):
             with pytest.raises(GitHubAPIError, match="GITHUB_TOKEN"):
                 get_json("https://api.github.com/test")
 
     def test_raises_on_url_error(self):
         """URLError (network failure) is wrapped in GitHubAPIError."""
         net_err = urllib.error.URLError(reason="Name or service not known")
-        with patch("urllib.request.urlopen", side_effect=net_err):
+        with patch("aggregation.github_api._open_request", side_effect=net_err):
             with pytest.raises(GitHubAPIError, match="network error"):
                 get_json("https://api.github.com/test")
 
     def test_raises_on_invalid_json(self):
         """Invalid JSON body raises GitHubAPIError."""
-        with patch("urllib.request.urlopen", return_value=_make_response(b"not-json")):
+        with patch(
+            "aggregation.github_api._open_request",
+            return_value=_make_response(b"not-json"),
+        ):
             with pytest.raises(GitHubAPIError, match="invalid JSON"):
+                get_json("https://api.github.com/test")
+
+    def test_raises_on_timeout(self):
+        with patch(
+            "aggregation.github_api._open_request", side_effect=TimeoutError("timeout")
+        ):
+            with pytest.raises(GitHubAPIError, match="network error"):
                 get_json("https://api.github.com/test")
 
 
@@ -151,7 +174,7 @@ class TestListRepoReleases:
             _make_response(json.dumps([]).encode()),
         ]
 
-        with patch("urllib.request.urlopen", side_effect=responses):
+        with patch("aggregation.github_api._open_request", side_effect=responses):
             result = list_repo_releases("owner", "repo")
 
         assert result == page1
@@ -167,7 +190,7 @@ class TestListRepoReleases:
             _make_response(json.dumps([]).encode()),
         ]
 
-        with patch("urllib.request.urlopen", side_effect=responses):
+        with patch("aggregation.github_api._open_request", side_effect=responses):
             result = list_repo_releases("owner", "repo")
 
         assert len(result) == 150
@@ -182,21 +205,23 @@ class TestListRepoReleases:
             _make_response(b"[]"),
         ]
 
-        with patch("urllib.request.urlopen", side_effect=responses):
+        with patch("aggregation.github_api._open_request", side_effect=responses):
             result = list_repo_releases("owner", "repo")
 
         assert len(result) == 1
 
     def test_raises_on_empty_first_page(self):
         """Empty first page (repo has no releases) raises GitHubAPIError."""
-        with patch("urllib.request.urlopen", return_value=_make_response(b"[]")):
+        with patch(
+            "aggregation.github_api._open_request", return_value=_make_response(b"[]")
+        ):
             with pytest.raises(GitHubAPIError, match="zero releases"):
                 list_repo_releases("owner", "repo")
 
     def test_raises_on_fetch_failure(self):
         """GitHubAPIError from get_json propagates without swallowing."""
         with patch(
-            "urllib.request.urlopen",
+            "aggregation.github_api._open_request",
             side_effect=_make_http_error(500),
         ):
             with pytest.raises(GitHubAPIError):
@@ -205,6 +230,9 @@ class TestListRepoReleases:
     def test_raises_on_non_list_response(self):
         """Non-list JSON (e.g. error dict) raises GitHubAPIError."""
         error_body = json.dumps({"message": "Not Found"}).encode()
-        with patch("urllib.request.urlopen", return_value=_make_response(error_body)):
+        with patch(
+            "aggregation.github_api._open_request",
+            return_value=_make_response(error_body),
+        ):
             with pytest.raises(GitHubAPIError, match="unexpected type"):
                 list_repo_releases("owner", "repo")

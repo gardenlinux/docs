@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Tuple
 
+from .auth import git_environment, redact_credentials
 from .models import AggregateResult, RepoConfig
 from .sphinx_builder import build_sphinx_markdown
 
@@ -69,6 +70,7 @@ class DocsFetcher:
         temp_dir = Path(tempfile.mkdtemp())
 
         try:
+            git_env = git_environment(repo.url)
             print(f"  Fetching from: {repo.url}")
             print(f"  Ref: {repo.ref}")
             if repo.root_files:
@@ -93,6 +95,7 @@ class DocsFetcher:
                 check=True,
                 capture_output=True,
                 cwd=temp_dir,
+                env=git_env,
             )
 
             # Determine which commit to checkout:
@@ -153,12 +156,20 @@ class DocsFetcher:
             return True, resolved_commit
 
         except subprocess.CalledProcessError as e:
-            print(f"  Error: Git command failed: {e}", file=sys.stderr)
+            print(
+                f"  Error: Git command failed: {redact_credentials(str(e))}",
+                file=sys.stderr,
+            )
             if e.stderr:
-                print(f"  {e.stderr.decode()}", file=sys.stderr)
+                stderr = (
+                    e.stderr.decode(errors="replace")
+                    if isinstance(e.stderr, bytes)
+                    else e.stderr
+                )
+                print(f"  {redact_credentials(stderr)}", file=sys.stderr)
             return False, None
         except Exception as e:
-            print(f"  Error: {e}", file=sys.stderr)
+            print(f"  Error: {redact_credentials(str(e))}", file=sys.stderr)
             return False, None
         finally:
             # Cleanup

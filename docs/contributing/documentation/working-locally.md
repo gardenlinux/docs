@@ -93,11 +93,11 @@ commit hashes.
 
 `make aggregate` also fetches every release from `gardenlinux/gardenlinux` via
 the GitHub Releases API to generate per-release note pages and to validate
-GLRD-listed minor releases. Set `GITHUB_TOKEN` before running `make aggregate`
+GLRD-listed minor releases. Set `GH_COM_TOKEN` before running `make aggregate`
 to prevent rate-limiting:
 
 ```bash
-export GITHUB_TOKEN=$(gh auth token)
+export GH_COM_TOKEN=$(gh auth token --hostname github.com)
 make aggregate
 ```
 
@@ -105,6 +105,17 @@ make aggregate
 You can add the `export` statement to you Shell's configuration file to avoid having to re-export it in different sessions.
 
 :::
+
+For mixed public and GitHub Enterprise sources, authenticate to each host
+separately. Replace `github.example.com` with your enterprise hostname:
+
+```bash
+export GH_COM_TOKEN=$(gh auth token --hostname github.com)
+export GH_ENTERPRISE_HOST=github.example.com
+export GH_ENTERPRISE_TOKEN=$(gh auth token --hostname "$GH_ENTERPRISE_HOST")
+python3 src/aggregate.py --check-auth
+make aggregate
+```
 
 #### From Local Repositories (Development)
 
