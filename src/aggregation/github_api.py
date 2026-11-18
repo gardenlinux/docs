@@ -6,15 +6,17 @@ than writing ad-hoc HTTP requests.
 
 Authentication
 --------------
-Set the ``GITHUB_TOKEN`` environment variable to a personal access token (PAT)
+Set ``GH_COM_TOKEN`` for github.com. For GitHub Enterprise, configure the
+hostname in ``GH_ENTERPRISE_HOST`` and its token in ``GH_ENTERPRISE_TOKEN``.
+``GITHUB_TOKEN`` remains a github.com-only compatibility alias. Use a PAT
 or an OAuth token.  No scopes are required for accessing public repositories.
-When ``GITHUB_TOKEN`` is not set (or is empty after stripping whitespace),
+When the matching token is not set (or is empty after stripping whitespace),
 requests are sent unauthenticated; GitHub applies a rate limit of 60 requests
 per hour for unauthenticated access vs. 5 000 per hour for authenticated access.
 
 Recommended for local development::
 
-    export GITHUB_TOKEN=$(gh auth token)
+    export GH_COM_TOKEN=$(gh auth token --hostname github.com)
 
 Failure handling
 ----------------
@@ -25,10 +27,12 @@ can hard-fail with a non-zero exit code.
 """
 
 import json
-import os
 import urllib.error
 import urllib.request
 from typing import Any
+from urllib.parse import urlsplit
+
+from .auth import get_token, token_variable
 
 GITHUB_API_BASE = "https://api.github.com"
 
@@ -45,8 +49,7 @@ class GitHubAPIError(Exception):
 def _build_request(url: str) -> urllib.request.Request:
     """Build a :class:`urllib.request.Request` with standard GitHub API headers.
 
-    Adds ``Authorization: Bearer <token>`` when ``GITHUB_TOKEN`` is set and
-    non-empty.
+    Adds a Bearer token only for the matching trusted HTTPS host.
     """
     headers = {
         "Accept": "application/vnd.github+json",
@@ -54,11 +57,35 @@ def _build_request(url: str) -> urllib.request.Request:
         "User-Agent": "gardenlinux-docs",
     }
 
-    token = os.environ.get("GITHUB_TOKEN", "").strip()
+    token = get_token(url)
     if token:
         headers["Authorization"] = f"Bearer {token}"
 
     return urllib.request.Request(url, headers=headers)
+
+
+class _SameOriginRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Do not forward API credentials to another origin on redirects."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        old = urlsplit(req.full_url)
+        new = urlsplit(newurl)
+        if (
+            (old.scheme, old.hostname, old.port or 443)
+            != (new.scheme, new.hostname, new.port or 443)
+            or new.username is not None
+            or new.password is not None
+        ):
+            raise GitHubAPIError("Refusing cross-origin authenticated API redirect")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _open_request(req):
+    if req.get_header("Authorization"):
+        return urllib.request.build_opener(_SameOriginRedirectHandler()).open(
+            req, timeout=30
+        )
+    return urllib.request.urlopen(req, timeout=30)
 
 
 def get_json(url: str) -> Any:
@@ -78,7 +105,7 @@ def get_json(url: str) -> Any:
     req = _build_request(url)
 
     try:
-        with urllib.request.urlopen(req) as response:
+        with _open_request(req) as response:
             body = response.read().decode("utf-8")
     except urllib.error.HTTPError as exc:
         # Extract rate-limit info from error headers when available.
@@ -95,14 +122,16 @@ def get_json(url: str) -> Any:
                 msg += f", X-RateLimit-Reset: {rate_reset}"
             msg += ")"
         if rate_remaining == "0":
+            variable = token_variable(url) or "the host-specific token"
             msg += (
-                " — rate limit exhausted; set GITHUB_TOKEN to raise the limit "
-                "(export GITHUB_TOKEN=$(gh auth token))"
+                f" — rate limit exhausted; set {variable} to raise the limit "
+                "(GITHUB_TOKEN is also supported for github.com only)"
             )
         raise GitHubAPIError(msg) from exc
-    except urllib.error.URLError as exc:
+    except (urllib.error.URLError, TimeoutError) as exc:
         raise GitHubAPIError(
-            f"GitHub API request failed (network error) for {url}: {exc.reason}"
+            f"GitHub API request failed (network error) for {url}: "
+            f"{getattr(exc, 'reason', str(exc))}"
         ) from exc
 
     try:
@@ -160,8 +189,8 @@ def list_repo_releases(owner: str, repo: str, per_page: int = 100) -> list[dict]
         raise GitHubAPIError(
             f"GitHub API returned zero releases for {owner}/{repo}.  "
             "If this is unexpected, check that the repository exists and that "
-            "GITHUB_TOKEN (if set) has access to it.  "
-            "Set GITHUB_TOKEN to authenticate: export GITHUB_TOKEN=$(gh auth token)"
+            "GH_COM_TOKEN (or GITHUB_TOKEN, if set) has access to it.  "
+            "Set GH_COM_TOKEN=$(gh auth token --hostname github.com) to authenticate."
         )
 
     return all_releases

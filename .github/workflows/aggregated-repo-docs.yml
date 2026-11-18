@@ -18,7 +18,14 @@ on:
         description: 'Repository name as it appears in repos-config.json (e.g. gardenlinux)'
         required: true
         type: string
+      enterprise-host:
+        description: 'Optional GitHub Enterprise hostname for trusted aggregation'
+        required: false
+        type: string
+        default: ''
     secrets:
+      GH_ENTERPRISE_TOKEN:
+        required: false
       DOCS_BOT_APP_ID:
         required: true
       DOCS_BOT_PRIVATE_KEY:
@@ -95,6 +102,9 @@ jobs:
       override-repo: ${{ inputs.repo }}
       override-ref: ${{ github.head_ref || github.ref_name }}
       override-commit: ${{ github.event.pull_request.head.sha || github.sha }}
+      enterprise-host: ${{ inputs.enterprise-host }}
+    secrets:
+      GH_ENTERPRISE_TOKEN: ${{ inputs.enterprise-host && secrets.GH_ENTERPRISE_TOKEN || '' }}
 
   docs-checks-gate:
     name: Docs checks gate

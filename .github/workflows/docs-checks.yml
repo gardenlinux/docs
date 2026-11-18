@@ -15,6 +15,14 @@ on:
         description: 'Git commit SHA to use for the overridden repo'
         required: false
         type: string
+      enterprise-host:
+        description: 'Optional GitHub Enterprise hostname (without https://)'
+        required: false
+        type: string
+        default: ''
+    secrets:
+      GH_ENTERPRISE_TOKEN:
+        required: false
   pull_request:
     branches: [main]
   push:
@@ -22,11 +30,16 @@ on:
 
 jobs:
   aggregate:
+    # Public fork checks need no private credentials; enterprise checks are trusted-only.
+    if: github.event_name != 'pull_request_target' && (!inputs.enterprise-host || github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: gardenlinux/docs
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # pin@v6.2.0
@@ -37,19 +50,35 @@ jobs:
         run: |
           pip install -r requirements.txt
 
+      - name: Verify aggregation authentication
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_ENTERPRISE_HOST: ${{ inputs.enterprise-host }}
+          GH_ENTERPRISE_TOKEN: ${{ inputs.enterprise-host && secrets.GH_ENTERPRISE_TOKEN || '' }}
+        run: python3 src/aggregate.py --check-auth
+
       - name: Run aggregate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_ENTERPRISE_HOST: ${{ inputs.enterprise-host }}
+          GH_ENTERPRISE_TOKEN: ${{ inputs.enterprise-host && secrets.GH_ENTERPRISE_TOKEN || '' }}
+          OVERRIDE_REPO: ${{ inputs.override-repo }}
+          OVERRIDE_REF: ${{ inputs.override-ref }}
+          OVERRIDE_COMMIT: ${{ inputs.override-commit }}
+        shell: bash
         run: |
-          OVERRIDE_ARGS=""
-          if [ -n "${{ inputs.override-repo }}" ]; then
-            OVERRIDE_ARGS="--repo ${{ inputs.override-repo }}"
-            if [ -n "${{ inputs.override-ref }}" ]; then
-              OVERRIDE_ARGS="$OVERRIDE_ARGS --override-ref ${{ inputs.override-ref }}"
+          set -euo pipefail
+          OVERRIDE_ARGS=()
+          if [ -n "$OVERRIDE_REPO" ]; then
+            OVERRIDE_ARGS+=(--repo "$OVERRIDE_REPO")
+            if [ -n "$OVERRIDE_REF" ]; then
+              OVERRIDE_ARGS+=(--override-ref "$OVERRIDE_REF")
             fi
-            if [ -n "${{ inputs.override-commit }}" ]; then
-              OVERRIDE_ARGS="$OVERRIDE_ARGS --override-commit ${{ inputs.override-commit }}"
+            if [ -n "$OVERRIDE_COMMIT" ]; then
+              OVERRIDE_ARGS+=(--override-commit "$OVERRIDE_COMMIT")
             fi
           fi
-          python3 src/aggregate.py $OVERRIDE_ARGS
+          python3 src/aggregate.py "${OVERRIDE_ARGS[@]}"
 
       - name: Run transformation
         run: |

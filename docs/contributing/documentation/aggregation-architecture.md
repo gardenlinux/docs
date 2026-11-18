@@ -102,14 +102,24 @@ flowchart TD
 - Supports both remote (git) and local (file) sources
 - Handles root files separately from docs directory
 - Provides commit hash for reproducible builds
+- Uses `GH_COM_TOKEN` for github.com and `GH_ENTERPRISE_TOKEN` for the hostname
+  configured in `GH_ENTERPRISE_HOST`. No enterprise hostname is hard-coded.
+  Git credentials are repository-URL-scoped and supplied only through the fetch
+  subprocess environment, without changing persistent Git configuration.
 
 ### 2. GitHub HTTP client (`github_api.py`)
 
 **Purpose:** Fetch GitHub release data for use by the release generators.
 
-Uses `GITHUB_TOKEN` when set. Hard-fails on any error (network, non-2xx status,
+Uses the same host-specific credentials as Git fetching (`GITHUB_TOKEN` remains
+a github.com-only alias). Garden Linux releases are always fetched from the
+public API. Hard-fails on any error (network, non-2xx status,
 rate-limit exhaustion, or empty first page) so release docs never ship in a
 silently degraded state.
+
+`aggregate.py --check-auth` checks explicit credentials, Git access to the
+selected source repositories, and the public releases API without writing docs
+or updating locks. CI runs this preflight before aggregation.
 
 ### 3. GLRD subprocess wrapper (`glrd.py`)
 

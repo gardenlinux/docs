@@ -20,6 +20,7 @@ from aggregation.glrd import (
     run_glrd_json,
 )
 from aggregation.install_pins import sync_install_pins
+from aggregation.preflight import check_authentication
 from aggregation.release_notes import generate_release_notes_docs
 from aggregation.releases import generate_release_docs
 from aggregation.structure import verify_internal_links
@@ -145,6 +146,11 @@ Examples:
         help="Scope overrides to this repository; required when --single is used",
     )
     parser.add_argument(
+        "--check-auth",
+        action="store_true",
+        help="Check source Git and public releases API access without writing documentation",
+    )
+    parser.add_argument(
         "--update-locks",
         action="store_true",
         help="Update commit locks: fetch and update config with resolved commit hashes",
@@ -236,6 +242,18 @@ Examples:
             else:
                 print(f"WARNING: Repository '{args.repo}' not found in config")
 
+    if args.check_auth:
+        selected_repos = [
+            repo for repo in repos if not args.single or repo.name == args.repo
+        ]
+        try:
+            check_authentication(selected_repos)
+        except (GitHubAPIError, ValueError) as exc:
+            print(f"Authentication preflight failed: {exc}", file=sys.stderr)
+            return 1
+        print("Authentication preflight passed; no documentation changed.")
+        return 0
+
     # Create temporary directory for fetched docs
     with tempfile.TemporaryDirectory() as temp_dir_str:
         temp_dir = Path(temp_dir_str)
@@ -312,8 +330,8 @@ Examples:
     except GitHubAPIError as exc:
         print(
             f"\nError: Could not fetch GitHub releases — {exc}\n"
-            "Hint: set GITHUB_TOKEN to avoid rate-limit issues: "
-            "export GITHUB_TOKEN=$(gh auth token)",
+            "Hint: set GH_COM_TOKEN to avoid rate-limit issues: "
+            "export GH_COM_TOKEN=$(gh auth token --hostname github.com)",
             file=sys.stderr,
         )
         return 1

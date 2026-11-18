@@ -317,12 +317,26 @@ The artifact is consumed by the three parallel lint jobs (`linkcheck`,
 
 ### Required Permissions
 
-No secrets are required by this workflow itself (it only reads public
-repositories). When called as a reusable workflow, it inherits the caller's
-`GITHUB_TOKEN` permissions (read-only is sufficient).
+Public aggregation requires no additional secrets. The workflow supplies the
+built-in `GITHUB_TOKEN` to Git fetching and the public releases API with
+`contents: read` permissions. It first runs `aggregate.py --check-auth` to verify
+repository and API access without writing documentation.
+
+For enterprise sources, reusable callers can optionally provide the
+`enterprise-host` input and `GH_ENTERPRISE_TOKEN` secret. The orchestrator
+forwards both to `docs-checks.yml`; nested callers must explicitly forward the
+secret at every hop:
+
+```yaml
+with:
+  enterprise-host: github.example.com
+secrets:
+  GH_ENTERPRISE_TOKEN: ${{ secrets.GH_ENTERPRISE_TOKEN }}
+```
 
 :::tip `GITHUB_TOKEN`
-Setting the `GITHUB_TOKEN` environment variable is recommended to prevent rate limiting.
+The workflow sets `GITHUB_TOKEN` automatically to prevent unauthenticated API
+rate limiting. Local users can use `GH_COM_TOKEN` or its `GITHUB_TOKEN` alias.
 :::
 
 ### Job Graph

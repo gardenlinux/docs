@@ -103,7 +103,9 @@ GitHub HTTP client for release data:
 - **`GitHubAPIError`** — Exception raised on any GitHub API failure (network,
   non-2xx, rate-limit, or empty first page).
 - **`get_json(url)`** — Fetch a single GitHub API URL and return the parsed
-  JSON response. Uses `GITHUB_TOKEN` when set. Hard-fails on non-2xx status.
+  JSON response. Uses `GH_COM_TOKEN` for api.github.com and `GH_ENTERPRISE_TOKEN`
+  for `GH_ENTERPRISE_HOST` (`GITHUB_TOKEN` is a public-host-only alias).
+  Hard-fails on non-2xx status and prevents cross-origin authenticated redirects.
 - **`list_repo_releases(owner, repo, per_page=100)`** — Paginate through all
   releases for a repository and return the full list. Paginates until GitHub
   returns an empty page (uncapped). Hard-fails on any error or an empty first
