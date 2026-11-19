@@ -105,6 +105,7 @@ class DocsFetcher:
                 checkout_ref = repo.ref
             else:
                 checkout_ref = repo.commit
+                self._ensure_commit_fetched(temp_dir, checkout_ref, git_env)
 
             print(f"  Checking out: {checkout_ref}")
             subprocess.run(
@@ -174,6 +175,41 @@ class DocsFetcher:
         finally:
             # Cleanup
             shutil.rmtree(temp_dir, ignore_errors=True)
+
+    @staticmethod
+    def _ensure_commit_fetched(
+        temp_dir: Path, commit: str, git_env: dict[str, str]
+    ) -> None:
+        """
+        Make a pinned commit available when no branch points at it.
+
+        `git fetch --all` follows the default refspec and so only retrieves
+        refs/heads/*. The head commit of a pull request opened from a fork is
+        present in the base repository under refs/pull/N/head, but is not
+        reachable from any branch, so the subsequent checkout would fail.
+        Requesting the object by name brings it in.
+
+        Args:
+            temp_dir: Working tree the repository was fetched into
+            commit: Commit to make available
+            git_env: Git environment carrying the credentials for the remote
+        """
+        present = subprocess.run(
+            ["git", "cat-file", "-e", f"{commit}^{{commit}}"],
+            capture_output=True,
+            cwd=temp_dir,
+        )
+        if present.returncode == 0:
+            return
+
+        print(f"  {commit} is not on a branch; fetching the commit directly")
+        subprocess.run(
+            ["git", "fetch", "origin", commit],
+            check=True,
+            capture_output=True,
+            cwd=temp_dir,
+            env=git_env,
+        )
 
     def _fetch_local(
         self,
