@@ -120,7 +120,6 @@ AI-assisted writing introduces recognizable patterns that reduce documentation q
 - **`SYN-CYCLE` - Synonym cycling** — using different words for the same concept within a short span (e.g., "build manifest", "build descriptor", "build specification" for the same thing). Pick one term and use it throughout.
 - **`FALSE-RANGE` - False ranges** (`from … to …` implying broad coverage from two arbitrary endpoints). List specific items instead.
 - **`BOLD-OVERUSE` - Boldface overuse** — bold applied to adjectives, adverbs, or transitional words for decoration rather than to mark key terms or critical warnings.
-- **`TITLE-CASE` - Title case in headings** — capitalising non-proper words in headings. Use sentence case; preserve proper nouns and acronyms.
 - **`EMOJI` - Emojis** — any emoji outside a code fence. Delete; replace with a VitePress callout if semantic meaning is needed.
 - **`CHATBOT-ARTIFACT` - Chatbot artifacts** (`Certainly!`, `Great question!`, `As I mentioned`, `I hope this helps`, `Feel free to ask`). Delete entirely.
 - **`SYCOPHANT` - Sycophantic tone** (`great job`, `well done`, `excellent choice`, `congratulations on`). Delete; state the outcome directly.
