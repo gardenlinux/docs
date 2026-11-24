@@ -173,6 +173,9 @@ on:
 jobs:
   docs:
     uses: gardenlinux/docs/.github/workflows/aggregated-repo-docs.yml@main
+    permissions:
+      contents: read
+      pull-requests: read
     with:
       repo: new-repo
     secrets: inherit

@@ -81,10 +81,18 @@ on:
 jobs:
   docs:
     uses: gardenlinux/docs/.github/workflows/aggregated-repo-docs.yml@main
+    permissions:
+      contents: read
+      pull-requests: read
     with:
       repo: repo
     secrets: inherit
 ```
+
+The `permissions` block is required in repositories whose default
+`GITHUB_TOKEN` permissions are restricted to read-only. Without it the workflow
+fails validation with `requesting 'pull-requests: read', but is only allowed
+'pull-requests: none'`.
 
 ### Job Graph
 
