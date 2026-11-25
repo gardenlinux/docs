@@ -13,6 +13,10 @@ updates:
       npm:
         patterns:
           - "*"
+    ignore:
+      # Do not open PRs for vitepress 2.0.0-alpha pre-releases
+      - dependency-name: "vitepress"
+        versions: ["2.0.0-alpha.*"]
 
   - package-ecosystem: "pip"
     directory: "/"
