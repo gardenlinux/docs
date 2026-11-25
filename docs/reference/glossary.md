@@ -1,6 +1,8 @@
 ---
 title: "Glossary"
 order: 1
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Glossary

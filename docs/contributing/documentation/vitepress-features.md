@@ -13,6 +13,8 @@ related_topics:
   - /contributing/documentation/configuration.md
   - /contributing/documentation/technical.md
   - /contributing/documentation/testing.md
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # VitePress Features and Customizations

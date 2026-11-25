@@ -12,7 +12,7 @@ related_topics:
   - /explanation/secure-boot.md
 order: 1
 github_org: gardenlinux
-github_repo: gardenlinux
+github_repo: docs
 github_source_path: docs/explanation/history.md
 github_target_path: docs/explanation/history.md
 ---

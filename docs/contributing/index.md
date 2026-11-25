@@ -2,6 +2,8 @@
 title: Contributing
 description: Guidelines and information for contributing to Garden Linux
 order: 6
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Contributing

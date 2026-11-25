@@ -17,3 +17,10 @@ exclude:
       - "docs/reference/adr/0014-enforce-pr-references-in-commits.md"
       - "docs/reference/adr/0035-cname-flavor-artifact-naming.md"
       - "docs/reference/adr/install.md"
+  - rules:
+      - "FM-REPO"
+    paths:
+      - "docs/index.md"
+      - "docs/reference/python-gardenlinux-lib-api.md"
+      - "docs/reference/python-gardenlinux-lib-cli.md"
+      - "docs/reference/releases/release-notes/**"

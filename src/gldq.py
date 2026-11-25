@@ -22,6 +22,7 @@ __version__ = "0.1.0"
 
 ERROR = "error"
 WARNING = "warning"
+NO_REPO_GROUP = "(no repo)"
 
 SKIP_DIRS = {
     ".git",
@@ -92,6 +93,11 @@ RULES: dict[str, RuleInfo] = {
     "FM-ORDER": RuleInfo(
         "FM-ORDER", WARNING, "Front matter order must be an integer when present"
     ),
+    "FM-REPO": RuleInfo(
+        "FM-REPO",
+        ERROR,
+        "Front matter must include github_org and github_repo",
+    ),
     "FM-RELATED": RuleInfo(
         "FM-RELATED", ERROR, "related_topics must be a list of existing documents"
     ),
@@ -159,6 +165,7 @@ class Finding:
     line: int | None
     column: int | None
     message: str
+    group: str = "(no repo)"
 
     @property
     def sort_key(self) -> tuple[str, int, int, str]:
@@ -708,6 +715,10 @@ def _finding(
     message: str,
 ) -> Finding:
     rule = RULES[rule_id]
+    frontmatter = document.frontmatter or {}
+    org = frontmatter.get("github_org")
+    repo = frontmatter.get("github_repo")
+    group = f"{org}/{repo}" if org and repo else NO_REPO_GROUP
     return Finding(
         rule_id=rule_id,
         severity=rule.severity,
@@ -715,6 +726,7 @@ def _finding(
         line=line,
         column=column,
         message=message,
+        group=group,
     )
 
 def check_frontmatter(document: Document) -> Iterator[Finding]:
@@ -789,6 +801,28 @@ def check_frontmatter(document: Document) -> Iterator[Finding]:
                         1,
                         f"related_topics target not found: {reference}",
                     )
+
+def check_repo(document: Document) -> Iterator[Finding]:
+    """Require github_org and github_repo front matter."""
+    if document.is_home or document.is_excluded:
+        return
+
+    frontmatter = document.frontmatter or {}
+    org = frontmatter.get("github_org")
+    repo = frontmatter.get("github_repo")
+    if (
+        not isinstance(org, str)
+        or not org.strip()
+        or not isinstance(repo, str)
+        or not repo.strip()
+    ):
+        yield _finding(
+            document,
+            "FM-REPO",
+            1,
+            1,
+            "Missing github_org or github_repo in front matter",
+        )
 
 def check_headings(document: Document) -> Iterator[Finding]:
     """Check heading structure."""
@@ -1061,6 +1095,7 @@ def check_callouts(document: Document) -> Iterator[Finding]:
 CHECKS.extend(
     [
         check_frontmatter,
+        check_repo,
         check_headings,
         check_code,
         check_images,
@@ -1070,6 +1105,34 @@ CHECKS.extend(
         check_callouts,
     ]
 )
+
+
+def _group_findings(
+    findings: Sequence[Finding],
+) -> list[tuple[str, list[tuple[Path, list[Finding]]]]]:
+    """Group findings by github_org/github_repo, then by filename.
+
+    Groups are sorted alphabetically with the "(no repo)" group last. Files
+    within each group are sorted alphabetically by path, and findings within
+    each file retain their sort_key ordering.
+    """
+    by_group: dict[str, dict[Path, list[Finding]]] = {}
+    for finding in findings:
+        files = by_group.setdefault(finding.group, {})
+        files.setdefault(finding.path, []).append(finding)
+
+    def group_sort_key(label: str) -> tuple[bool, str]:
+        return (label == NO_REPO_GROUP, label)
+
+    grouped: list[tuple[str, list[tuple[Path, list[Finding]]]]] = []
+    for label in sorted(by_group, key=group_sort_key):
+        files = by_group[label]
+        file_entries = [
+            (path, sorted(files[path], key=lambda item: item.sort_key))
+            for path in sorted(files, key=lambda item: item.as_posix())
+        ]
+        grouped.append((label, file_entries))
+    return grouped
 
 
 def _counts(findings: Sequence[Finding]) -> tuple[int, int]:
@@ -1103,13 +1166,24 @@ def format_text(
     exclude_file: Path | None = None,
 ) -> str:
     """Format findings as human-readable text."""
-    lines = [
-        f"{_format_location(finding)}: {finding.severity} "
-        f"{finding.rule_id}: {finding.message}"
-        for finding in findings
-    ]
+    lines: list[str] = []
+    for label, file_entries in _group_findings(findings):
+        if lines:
+            lines.append("")
+        lines.append(f"## {label}")
+        for path, file_findings in file_entries:
+            lines.append("")
+            lines.append(f"{path.as_posix()}:")
+            for finding in file_findings:
+                lines.append(
+                    f"  {_format_location(finding)}: {finding.severity} "
+                    f"{finding.rule_id}: {finding.message}"
+                )
+
     if not lines:
         lines.append("No documentation quality findings.")
+    else:
+        lines.append("")
 
     errors, warnings = _counts(findings)
     summary = f"{errors} error(s), {warnings} warning(s) in {file_count} file(s)"
@@ -1144,16 +1218,27 @@ def format_json(
             "excluded": excluded,
             "exclude_file": exclude_file.as_posix() if exclude_file else None,
         },
-        "findings": [
+        "groups": [
             {
-                "path": finding.path.as_posix(),
-                "line": finding.line,
-                "column": finding.column,
-                "rule": finding.rule_id,
-                "severity": finding.severity,
-                "message": finding.message,
+                "group": label,
+                "files": [
+                    {
+                        "path": path.as_posix(),
+                        "findings": [
+                            {
+                                "line": finding.line,
+                                "column": finding.column,
+                                "rule": finding.rule_id,
+                                "severity": finding.severity,
+                                "message": finding.message,
+                            }
+                            for finding in file_findings
+                        ],
+                    }
+                    for path, file_findings in file_entries
+                ],
             }
-            for finding in findings
+            for label, file_entries in _group_findings(findings)
         ],
     }
     return json.dumps(payload, indent=2)
@@ -1168,15 +1253,19 @@ def format_github(
 ) -> str:
     """Format findings as GitHub Actions workflow annotations."""
     lines: list[str] = []
-    for finding in findings:
-        kind = "error" if finding.severity == ERROR else "warning"
-        properties = [f"file={finding.path}"]
-        if finding.line is not None:
-            properties.append(f"line={finding.line}")
-        if finding.column is not None:
-            properties.append(f"col={finding.column}")
-        message = _escape_github(f"[{finding.rule_id}] {finding.message}")
-        lines.append(f"::{kind} {','.join(properties)}::{message}")
+    for label, file_entries in _group_findings(findings):
+        lines.append(f"::group::{_escape_github(label)}")
+        for _, file_findings in file_entries:
+            for finding in file_findings:
+                kind = "error" if finding.severity == ERROR else "warning"
+                properties = [f"file={finding.path}"]
+                if finding.line is not None:
+                    properties.append(f"line={finding.line}")
+                if finding.column is not None:
+                    properties.append(f"col={finding.column}")
+                message = _escape_github(f"[{finding.rule_id}] {finding.message}")
+                lines.append(f"::{kind} {','.join(properties)}::{message}")
+        lines.append("::endgroup::")
 
     if not lines:
         lines.append("::notice title=gldq::No documentation quality findings")

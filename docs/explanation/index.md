@@ -2,6 +2,8 @@
 title: Explanation
 description: Understanding-oriented articles that clarify and illuminate concepts
 order: 4
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Explanation

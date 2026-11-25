@@ -2,6 +2,8 @@
 title: How-To Guides
 description: Task-oriented guides that show you how to solve specific problems
 order: 3
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # How-To Guides

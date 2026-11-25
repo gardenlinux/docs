@@ -2,6 +2,8 @@
 title: Reporting Issues
 description: How to report issues when working with garden linux
 order: 999
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Reporting Issues

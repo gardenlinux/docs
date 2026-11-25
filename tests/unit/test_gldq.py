@@ -15,7 +15,13 @@ def write_doc(tmp_path: Path, relative: str, content: str) -> Path:
 
 
 def make_doc(
-    body: str, frontmatter: str = "title: Page\ndescription: A test page\n"
+    body: str,
+    frontmatter: str = (
+        "title: Page\n"
+        "description: A test page\n"
+        "github_org: gardenlinux\n"
+        "github_repo: docs\n"
+    ),
 ) -> str:
     """Build a markdown document with default valid front matter."""
     return f"---\n{frontmatter}---\n\n{body}"
@@ -25,7 +31,13 @@ def make_release_note(body: str = "Chart 📊\n") -> str:
     """Build a valid release note document with a trailing RelatedTopics."""
     return make_doc(
         f"# Release\n\n{body}\n<RelatedTopics />\n",
-        frontmatter="title: Release\ndescription: Release notes\nrelated_topics: []\n",
+        frontmatter=(
+            "title: Release\n"
+            "description: Release notes\n"
+            "github_org: gardenlinux\n"
+            "github_repo: docs\n"
+            "related_topics: []\n"
+        ),
     )
 
 
@@ -45,6 +57,22 @@ def find(
 def rule_ids(findings: list[gldq.Finding]) -> list[str]:
     """Return the rule IDs from findings."""
     return [finding.rule_id for finding in findings]
+
+
+def flatten_json_findings(payload: dict) -> list[dict]:
+    """Flatten the grouped JSON payload into a flat list of findings.
+
+    Each finding dict is augmented with its ``group`` and ``path`` for
+    assertions that predate the grouped output structure.
+    """
+    flattened: list[dict] = []
+    for group in payload["groups"]:
+        for file_entry in group["files"]:
+            for finding in file_entry["findings"]:
+                flattened.append(
+                    {**finding, "group": group["group"], "path": file_entry["path"]}
+                )
+    return flattened
 
 
 class TestValidDocuments:
@@ -425,7 +453,7 @@ class TestExcludeFile:
         payload = json.loads(capsys.readouterr().out)
         assert payload["summary"]["excluded"] == 1
         assert payload["summary"]["warnings"] == 0
-        assert payload["findings"] == []
+        assert flatten_json_findings(payload) == []
 
     def test_exclusion_is_scoped_to_rule_and_path(self, tmp_path, monkeypatch, capsys):
         self.write_exclude(
@@ -451,7 +479,7 @@ class TestExcludeFile:
         assert payload["summary"]["excluded"] == 1
 
         findings_by_path: dict[str, list[str]] = {}
-        for finding in payload["findings"]:
+        for finding in flatten_json_findings(payload):
             findings_by_path.setdefault(finding["path"], []).append(finding["rule"])
 
         release_rules = next(
@@ -600,7 +628,9 @@ class TestExcludeFile:
         assert gldq.main(["docs", "--no-exclude-file", "--format", "json"]) == 0
         payload = json.loads(capsys.readouterr().out)
         assert payload["summary"]["excluded"] == 0
-        assert any(finding["rule"] == "EMOJI" for finding in payload["findings"])
+        assert any(
+            finding["rule"] == "EMOJI" for finding in flatten_json_findings(payload)
+        )
 
     def test_custom_exclude_file(self, tmp_path, capsys):
         path = self.write_exclude(
@@ -671,7 +701,11 @@ class TestExcludeFile:
 
 class TestCli:
     def test_warning_only_exit_codes(self, tmp_path):
-        path = write_doc(tmp_path, "docs/page.md", "---\norder: 1\n---\n\n# Page\n")
+        path = write_doc(
+            tmp_path,
+            "docs/page.md",
+            "---\norder: 1\ngithub_org: gardenlinux\ngithub_repo: docs\n---\n\n# Page\n",
+        )
         assert gldq.main([str(path), "--no-exclude-file"]) == 0
         assert gldq.main([str(path), "--no-exclude-file", "--strict"]) == 1
 
@@ -704,17 +738,25 @@ class TestCli:
         )
 
     def test_json_output(self, tmp_path, capsys):
-        path = write_doc(tmp_path, "docs/page.md", "---\norder: 1\n---\n\n# Page\n")
+        path = write_doc(
+            tmp_path,
+            "docs/page.md",
+            "---\norder: 1\ngithub_org: gardenlinux\ngithub_repo: docs\n---\n\n# Page\n",
+        )
         assert gldq.main([str(path), "--no-exclude-file", "--format", "json"]) == 0
         payload = json.loads(capsys.readouterr().out)
         assert payload["tool"] == "gldq"
         assert payload["name"] == "Garden Linux Docs Quality"
         assert payload["summary"]["files"] == 1
         assert payload["summary"]["excluded"] == 0
-        assert isinstance(payload["findings"], list)
+        assert isinstance(payload["groups"], list)
 
     def test_github_output(self, tmp_path, capsys):
-        path = write_doc(tmp_path, "docs/page.md", "---\norder: 1\n---\n\n# Page\n")
+        path = write_doc(
+            tmp_path,
+            "docs/page.md",
+            "---\norder: 1\ngithub_org: gardenlinux\ngithub_repo: docs\n---\n\n# Page\n",
+        )
         assert gldq.main([str(path), "--no-exclude-file", "--format", "github"]) == 0
         output = capsys.readouterr().out
         assert "::warning" in output
@@ -724,6 +766,7 @@ class TestCli:
         assert gldq.main(["--list-rules"]) == 0
         output = capsys.readouterr().out
         assert "FM-YAML" in output
+        assert "FM-REPO" in output
         assert "RELATED-TOPICS-PRESENT" in output
         assert "CALLOUT-INVALID-TYPE" in output
         assert "CALLOUT-GITHUB-STYLE" in output
@@ -743,6 +786,8 @@ class TestCli:
                 frontmatter=(
                     "title: Page\n"
                     "description: Page\n"
+                    "github_org: gardenlinux\n"
+                    "github_repo: docs\n"
                     "related_topics:\n"
                     "  - /target.md\n"
                 ),
@@ -835,7 +880,7 @@ class TestCallouts:
             if finding.rule_id == "CALLOUT-UNCLOSED"
         ]
         assert len(findings) == 1
-        assert findings[0].line == 8
+        assert findings[0].line == 10
 
     def test_suppression_comment_is_honored(self, tmp_path):
         content = make_doc(
@@ -853,3 +898,194 @@ class TestCallouts:
         assert not gldq._path_matches(
             "docs/reference/other/a.md", "./reference/features/**"
         )
+
+
+class TestGrouping:
+    def _finding(self, path, group, rule="FM-TITLE", line=1, column=1):
+        return gldq.Finding(
+            rule_id=rule,
+            severity=gldq.WARNING,
+            path=Path(path),
+            line=line,
+            column=column,
+            message="message",
+            group=group,
+        )
+
+    def test_group_is_derived_from_frontmatter(self, tmp_path):
+        findings = find(
+            tmp_path,
+            make_doc(
+                "# Page\n",
+                frontmatter=(
+                    "title: Page\n"
+                    "description: A page\n"
+                    "github_org: gardenlinux\n"
+                    "github_repo: builder\n"
+                ),
+            ),
+        )
+        assert findings
+        assert all(f.group == "gardenlinux/builder" for f in findings)
+
+    def test_group_defaults_to_no_repo(self, tmp_path):
+        findings = find(
+            tmp_path,
+            make_doc("# Page\n", frontmatter="title: Page\ndescription: A page\n"),
+        )
+        assert findings
+        assert all(f.group == gldq.NO_REPO_GROUP for f in findings)
+
+    def test_partial_frontmatter_falls_back_to_no_repo(self, tmp_path):
+        findings = find(
+            tmp_path,
+            make_doc(
+                "# Page\n",
+                frontmatter=(
+                    "title: Page\n"
+                    "description: A page\n"
+                    "github_org: gardenlinux\n"
+                ),
+            ),
+        )
+        assert findings
+        assert all(f.group == gldq.NO_REPO_GROUP for f in findings)
+
+    def test_group_findings_orders_groups_and_files(self):
+        findings = [
+            self._finding("docs/z.md", "gardenlinux/builder"),
+            self._finding("docs/a.md", "gardenlinux/builder"),
+            self._finding("docs/b.md", "gardenlinux/daily"),
+            self._finding("docs/c.md", gldq.NO_REPO_GROUP),
+        ]
+        grouped = gldq._group_findings(findings)
+        labels = [label for label, _ in grouped]
+        assert labels == [
+            "gardenlinux/builder",
+            "gardenlinux/daily",
+            gldq.NO_REPO_GROUP,
+        ]
+        builder_files = [path.as_posix() for path, _ in grouped[0][1]]
+        assert builder_files == ["docs/a.md", "docs/z.md"]
+
+    def test_group_findings_keeps_sort_key_within_file(self):
+        findings = [
+            self._finding("docs/a.md", "org/repo", rule="CODE-LANG", line=5),
+            self._finding("docs/a.md", "org/repo", rule="FM-TITLE", line=1),
+        ]
+        grouped = gldq._group_findings(findings)
+        _, file_findings = grouped[0][1][0]
+        assert [f.line for f in file_findings] == [1, 5]
+
+    def test_text_output_is_grouped(self, tmp_path, monkeypatch, capsys):
+        write_doc(
+            tmp_path,
+            "docs/a.md",
+            make_doc(
+                "# A\n",
+                frontmatter=(
+                    "title: A\n"
+                    "description: Page A\n"
+                    "github_org: gardenlinux\n"
+                    "github_repo: builder\n"
+                ),
+            ),
+        )
+        write_doc(
+            tmp_path,
+            "docs/b.md",
+            make_doc("# B\n", frontmatter="title: B\ndescription: Page B\n"),
+        )
+        monkeypatch.chdir(tmp_path)
+        assert gldq.main(["docs", "--no-exclude-file"]) != 2
+        output = capsys.readouterr().out
+        assert "## gardenlinux/builder" in output
+        assert f"## {gldq.NO_REPO_GROUP}" in output
+        assert output.index("## gardenlinux/builder") < output.index(
+            f"## {gldq.NO_REPO_GROUP}"
+        )
+
+    def test_json_output_is_grouped(self, tmp_path, monkeypatch, capsys):
+        write_doc(
+            tmp_path,
+            "docs/a.md",
+            make_doc(
+                "# A\n",
+                frontmatter=(
+                    "title: A\n"
+                    "description: Page A\n"
+                    "github_org: gardenlinux\n"
+                    "github_repo: builder\n"
+                ),
+            ),
+        )
+        write_doc(
+            tmp_path,
+            "docs/b.md",
+            make_doc("# B\n", frontmatter="title: B\ndescription: Page B\n"),
+        )
+        monkeypatch.chdir(tmp_path)
+        gldq.main(["docs", "--no-exclude-file", "--format", "json"])
+        payload = json.loads(capsys.readouterr().out)
+        assert "findings" not in payload
+        labels = [group["group"] for group in payload["groups"]]
+        assert labels == ["gardenlinux/builder", gldq.NO_REPO_GROUP]
+        builder = payload["groups"][0]["files"][0]
+        assert builder["path"] == "docs/a.md"
+        assert "path" not in builder["findings"][0]
+
+    def test_github_output_wraps_groups(self, tmp_path, monkeypatch, capsys):
+        write_doc(
+            tmp_path,
+            "docs/b.md",
+            make_doc("# B\n", frontmatter="title: B\ndescription: Page B\n"),
+        )
+        monkeypatch.chdir(tmp_path)
+        gldq.main(["docs", "--no-exclude-file", "--format", "github"])
+        output = capsys.readouterr().out
+        assert f"::group::{gldq.NO_REPO_GROUP}" in output
+        assert "::endgroup::" in output
+
+
+class TestRepo:
+    def _no_repo_doc(self, body: str = "# Page\n") -> str:
+        return make_doc(body, frontmatter="title: Page\ndescription: A page\n")
+
+    def test_missing_repo_fields_is_an_error(self, tmp_path):
+        findings = find(tmp_path, self._no_repo_doc())
+        repo_findings = [f for f in findings if f.rule_id == "FM-REPO"]
+        assert len(repo_findings) == 1
+        assert repo_findings[0].severity == gldq.ERROR
+        assert repo_findings[0].group == gldq.NO_REPO_GROUP
+
+    def test_both_repo_fields_present_passes(self, tmp_path):
+        findings = find(tmp_path, make_doc("# Page\n"))
+        assert "FM-REPO" not in rule_ids(findings)
+
+    def test_missing_only_repo_is_an_error(self, tmp_path):
+        content = make_doc(
+            "# Page\n",
+            frontmatter=(
+                "title: Page\ndescription: A page\ngithub_org: gardenlinux\n"
+            ),
+        )
+        assert "FM-REPO" in rule_ids(find(tmp_path, content))
+
+    def test_home_page_is_exempt(self, tmp_path):
+        content = "---\nlayout: home\nhero:\n  name: Test\n---\n\nWelcome.\n"
+        assert "FM-REPO" not in rule_ids(find(tmp_path, content))
+
+    def test_excluded_page_is_exempt(self, tmp_path):
+        content = make_doc(
+            "# Page\n",
+            frontmatter="title: Page\ndescription: A page\nexclude: true\n",
+        )
+        assert "FM-REPO" not in rule_ids(find(tmp_path, content))
+
+    def test_missing_repo_fails_run_as_error(self, tmp_path, monkeypatch, capsys):
+        write_doc(tmp_path, "docs/page.md", self._no_repo_doc())
+        monkeypatch.chdir(tmp_path)
+        assert gldq.main(["docs", "--no-exclude-file"]) == 1
+        output = capsys.readouterr().out
+        assert f"## {gldq.NO_REPO_GROUP}" in output
+        assert "FM-REPO" in output

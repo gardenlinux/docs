@@ -2,6 +2,8 @@
 title: Documentation
 description: Everything You Need to Know about Documenting Garde Linux
 order: 0
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Documentation
