@@ -3,7 +3,7 @@
 import pytest
 
 from aggregation.glrd import resolve_active_versions
-from aggregation.releases import generate_release_table
+from aggregation.releases import generate_mermaid_gantt, generate_release_table
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -11,19 +11,32 @@ from aggregation.releases import generate_release_table
 
 
 def _make_release(
-    major: int, minor: int | None = None, patch: int | None = None
+    major: int,
+    minor: int | None = None,
+    patch: int | None = None,
+    lts: bool = False,
 ) -> dict:
-    """Build a minimal GLRD release dict."""
+    """Build a minimal GLRD release dict.
+
+    When *lts* is true an ``attributes.lts`` flag is injected. Major-only rows
+    (no *minor*) are tagged with ``type: "major"`` so the Gantt generator picks
+    them up.
+    """
     version: dict = {"major": major}
     if minor is not None:
         version["minor"] = minor
     if patch is not None:
         version["patch"] = patch
-    return {
+    release: dict = {
         "version": version,
         "git": {},
         "lifecycle": {},
     }
+    if minor is None:
+        release["type"] = "major"
+    if lts:
+        release["attributes"] = {"lts": True}
+    return release
 
 
 def _make_releases_data(*releases) -> dict:
@@ -176,6 +189,59 @@ class TestGenerateReleaseTableFiltering:
         assert "Warning" in captured.err
         # The present release must NOT trigger a warning.
         assert "2150.0.0" not in captured.err
+
+
+class TestLtsBadge:
+    """LTS major/next rows render a VitePress <Badge> in the table."""
+
+    BADGE = '<Badge type="tip" text="LTS" />'
+
+    def test_lts_major_row_has_badge(self):
+        """A major release flagged LTS gets the badge appended to its cell."""
+        data = _make_releases_data(_make_release(1877, lts=True))
+        table = generate_release_table(data, set(), existing_gh_tags=set())
+        assert "1877" in table
+        assert self.BADGE in table
+
+    def test_non_lts_major_row_has_no_badge(self):
+        """A major release without the LTS flag has no badge."""
+        data = _make_releases_data(_make_release(2150))
+        table = generate_release_table(data, set(), existing_gh_tags=set())
+        assert "2150" in table
+        assert "<Badge" not in table
+
+    def test_minor_row_never_gets_badge(self):
+        """LTS applies only to major/next; a minor row is never badged."""
+        data = _make_releases_data(_make_release(1877, 14, lts=True))
+        table = generate_release_table(data, set(), existing_gh_tags={"1877.14"})
+        assert "1877.14" in table
+        assert "<Badge" not in table
+
+
+class TestLtsGanttSection:
+    """LTS majors get a plain-text '(LTS)' suffix on the Gantt section title."""
+
+    def _lifecycle(self) -> dict:
+        return {
+            "released": {"isodate": "2025-05-28"},
+            "extended": {"isodate": "2026-02-28"},
+            "eol": {"isodate": "2030-05-31"},
+        }
+
+    def test_lts_major_section_labeled(self):
+        release = _make_release(1877, lts=True)
+        release["lifecycle"] = self._lifecycle()
+        gantt = generate_mermaid_gantt(_make_releases_data(release))
+        assert "section 1877 (LTS)" in gantt
+        # Task IDs stay numeric-only to remain valid Mermaid identifiers.
+        assert "sm1877" in gantt
+
+    def test_non_lts_major_section_unlabeled(self):
+        release = _make_release(2150)
+        release["lifecycle"] = self._lifecycle()
+        gantt = generate_mermaid_gantt(_make_releases_data(release))
+        assert "section 2150\n" in gantt
+        assert "(LTS)" not in gantt
 
 
 class TestResolveActiveVersions:
