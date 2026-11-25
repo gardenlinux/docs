@@ -37,4 +37,5 @@ LIFECYCLE_LINKS = {
     "standard": "release-lifecycle.md#standard-maintenance",
     "extended": "release-lifecycle.md#extended-maintenance",
     "eol": "release-lifecycle.md#end-of-maintenance",
+    "lts": "release-lifecycle.md#long-term-support-lts",
 }

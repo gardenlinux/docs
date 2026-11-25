@@ -3,7 +3,7 @@ black
 isort
 pytest
 pyyaml
-glrd @ git+https://github.com/gardenlinux/glrd.git@v5.0.0
+glrd @ git+https://github.com/gardenlinux/glrd.git@v5.1.0
 gardenlinux @ git+https://github.com/gardenlinux/python-gardenlinux-lib.git@0.10.24
 sphinx
 sphinx-markdown-builder

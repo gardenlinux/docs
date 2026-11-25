@@ -72,11 +72,13 @@ def format_version(release: dict, active_versions: set[str]) -> tuple[str, str]:
         Tuple of (version_string, version_link)
         - Active minor releases: link to release-notes/{version}.html
         - Archived minor releases: link to release-notes/archived/{version}.html
-        - Major releases: no link (just plain text)
+        - Major releases: no link (just plain text); LTS majors get an
+          ``LTS`` badge appended via the VitePress ``<Badge>`` component.
     """
     version_obj = release.get("version", {})
 
     has_minor = "minor" in version_obj
+    is_lts = bool((release.get("attributes") or {}).get("lts"))
 
     if "major" in version_obj and "minor" in version_obj:
         if "patch" in version_obj:
@@ -103,6 +105,9 @@ def format_version(release: dict, active_versions: set[str]) -> tuple[str, str]:
             version_link = f"[{version_str}](release-notes/archived/{version_str.replace('.', '-')}.html)"
     else:
         version_link = version_str  # Major release - no link
+        # LTS applies only to major/next releases; flag it with a VitePress badge.
+        if is_lts:
+            version_link = f'{version_str} <Badge type="tip" text="LTS" />'
 
     return version_str, version_link
 
@@ -148,12 +153,15 @@ def generate_mermaid_gantt(releases_data: dict) -> str:
     if not major_releases:
         return ""
 
-    gantt = GANTT_THEME + """
+    gantt = (
+        GANTT_THEME
+        + """
 gantt
     title Garden Linux Release Maintenance Phases
     dateFormat YYYY-MM-DD
     axisFormat %m/%y
 """
+    )
     for release in major_releases:
         version = release.get("version", {}).get("major")
         if not version:
@@ -174,7 +182,9 @@ gantt
         if not released_date or not eol_date:
             continue
 
-        gantt += f"    section {version}\n"
+        is_lts = bool((release.get("attributes") or {}).get("lts"))
+        section_label = f"{version} (LTS)" if is_lts else f"{version}"
+        gantt += f"    section {section_label}\n"
 
         if extended_date:
             gantt += f"    Standard Maintenance           :active, sm{version}, {released_date}, {extended_date}\n"
@@ -266,6 +276,7 @@ def get_timeline_section(gantt_chart: str, title: str) -> str:
 - [Standard Maintenance]({LIFECYCLE_LINKS['standard']}) — Active maintenance with regular updates
 - [Extended Maintenance]({LIFECYCLE_LINKS['extended']}) — Critical CVE fixes only (CVSS ≥7.0)
 - **EOM** = [End of Maintenance]({LIFECYCLE_LINKS['eol']}) — No further updates
+- **LTS** = [Long Term Support]({LIFECYCLE_LINKS['lts']}) — Maintained for five years
 """
 
 
