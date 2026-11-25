@@ -1,4 +1,4 @@
-codespell==2.4.2
+codespell==2.4.3
 black
 isort
 pytest
