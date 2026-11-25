@@ -4,8 +4,8 @@
       "name": "gardenlinux",
       "url": "https://github.com/gardenlinux/gardenlinux",
       "docs_path": "docs",
-      "ref": "main",
-      "commit": "ce9a6a66bc4f29f087c7ec7dfddddf725b69c301",
+      "ref": "feature/stackit_cloud_tests",
+      "commit": "453a22ed4df68dad2b75be626ab6f542acee01e7",
       "root_files": [
         "CONTRIBUTING.md",
         "SECURITY.md",
