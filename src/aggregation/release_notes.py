@@ -21,6 +21,21 @@ LEGACY_EMOJI_REPLACEMENTS = (
 ATX_HEADING_RE = re.compile(r"^(#{1,6})[ \t]+(.*)$")
 FENCE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})(.*)$")
 
+# GitHub-style callout opener, e.g. ``> [!NOTE]`` (trailing whitespace allowed).
+GITHUB_CALLOUT_RE = re.compile(
+    r"^\s*>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*$", re.IGNORECASE
+)
+# Blockquote body line, e.g. ``> text`` or a bare ``>``.
+BLOCKQUOTE_RE = re.compile(r"^\s*>\s?(.*)$")
+# Map GitHub callout types to VitePress container types accepted by gldq.
+GITHUB_CALLOUT_TYPES = {
+    "NOTE": "info",
+    "IMPORTANT": "info",
+    "TIP": "tip",
+    "WARNING": "warning",
+    "CAUTION": "danger",
+}
+
 
 def _strip_emoji(line: str) -> str:
     """Remove emoji from a line, preserving leading indentation."""
@@ -64,17 +79,85 @@ def _has_h1_outside_fences(lines: list[str]) -> bool:
     return False
 
 
+def _convert_github_callouts(lines: list[str]) -> list[str]:
+    """Rewrite GitHub-style blockquote callouts as VitePress containers.
+
+    GitHub renders ``> [!NOTE]`` blockquotes as admonitions; VitePress uses
+    ``::: info`` containers instead. This converts the GitHub syntax (which the
+    gldq ``CALLOUT-GITHUB-STYLE`` rule rejects) into the semantic VitePress
+    equivalent, preserving the original type as the container title.
+
+    Code fences are skipped so blockquote-looking lines inside fenced blocks are
+    left untouched.
+    """
+    converted: list[str] = []
+    fence_marker: str | None = None
+    index = 0
+
+    while index < len(lines):
+        line = lines[index]
+        fence_match = FENCE_RE.match(line)
+        if fence_match:
+            marker, info = fence_match.group(2), fence_match.group(3)
+            if fence_marker is None:
+                fence_marker = marker
+            elif (
+                not info.strip()
+                and marker[0] == fence_marker[0]
+                and len(marker) >= len(fence_marker)
+            ):
+                fence_marker = None
+            converted.append(line)
+            index += 1
+            continue
+
+        if fence_marker is not None:
+            converted.append(line)
+            index += 1
+            continue
+
+        opener = GITHUB_CALLOUT_RE.match(line)
+        if not opener:
+            converted.append(line)
+            index += 1
+            continue
+
+        callout_type = opener.group(1).upper()
+        container = GITHUB_CALLOUT_TYPES.get(callout_type, "info")
+
+        # Collect the blockquote body lines that follow the opener.
+        body: list[str] = []
+        index += 1
+        while index < len(lines):
+            body_match = BLOCKQUOTE_RE.match(lines[index])
+            if body_match is None:
+                break
+            body.append(body_match.group(1).rstrip())
+            index += 1
+
+        # Drop trailing blank blockquote lines for a tidy container.
+        while body and not body[-1]:
+            body.pop()
+
+        converted.append(f"::: {container} {callout_type}")
+        converted.extend(body)
+        converted.append(":::")
+
+    return converted
+
+
 def sanitize_release_note_body(body: str) -> str:
     """Normalize release-note bodies for gldq and VitePress.
 
-    Removes legacy emoji, demotes body H1 headings below the generated page
-    title, prevents skipped heading levels, adds a language to unlabeled code
-    fences, and closes unclosed fences.
+    Removes legacy emoji, converts GitHub-style callouts to VitePress
+    containers, demotes body H1 headings below the generated page title,
+    prevents skipped heading levels, adds a language to unlabeled code fences,
+    and closes unclosed fences.
     """
     if not body:
         return body
 
-    lines = body.splitlines()
+    lines = _convert_github_callouts(body.splitlines())
     shift = 1 if _has_h1_outside_fences(lines) else 0
     sanitized: list[str] = []
     fence_marker: str | None = None

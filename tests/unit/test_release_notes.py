@@ -75,6 +75,35 @@ class TestSanitizeReleaseNoteBody:
         result = sanitize_release_note_body("  ```\n  foo\n  ```\n")
         assert result.splitlines() == ["  ```text", "  foo", "  ```"]
 
+    def test_converts_github_callout_to_vitepress_container(self):
+        result = sanitize_release_note_body(
+            "> [!NOTE]  \n"
+            "> This release is `1443.15`.\n"
+            "> It follows `1443.10`.\n"
+        )
+        assert result.splitlines() == [
+            "::: info NOTE",
+            "This release is `1443.15`.",
+            "It follows `1443.10`.",
+            ":::",
+        ]
+
+    def test_github_callout_type_mapping(self):
+        for github_type, container in (
+            ("NOTE", "info"),
+            ("IMPORTANT", "info"),
+            ("TIP", "tip"),
+            ("WARNING", "warning"),
+            ("CAUTION", "danger"),
+        ):
+            result = sanitize_release_note_body(f"> [!{github_type}]\n> body\n")
+            assert result.splitlines()[0] == f"::: {container} {github_type}"
+
+    def test_leaves_github_callout_inside_fence_untouched(self):
+        result = sanitize_release_note_body("```text\n> [!NOTE]\n> keep\n```\n")
+        assert "> [!NOTE]" in result
+        assert "::: info" not in result
+
     def test_format_release_entry_sanitizes_body(self):
         release = _make_release("2150.6.0")
         release["body"] = "📊 Table View\n\n# Changes\n\n```\nfoo\n```\n"
@@ -91,6 +120,8 @@ class TestSanitizeReleaseNoteBody:
             "📊 Table View\n\n"
             "📝 Detailed View\n\n"
             "# Changes\n\n"
+            "> [!NOTE]  \n"
+            "> This release follows `1443.10`.\n\n"
             "## Software Component Versions\n\n"
             "```\ncontainerd 1.0\n```\n\n"
             "```text\nunclosed\n"
@@ -112,6 +143,7 @@ class TestSanitizeReleaseNoteBody:
         rule_ids = {finding.rule_id for finding in findings}
 
         for rule_id in (
+            "CALLOUT-GITHUB-STYLE",
             "CODE-BALANCE",
             "CODE-LANG",
             "EMOJI",
