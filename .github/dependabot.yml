@@ -2,9 +2,38 @@
 
 version: 2
 updates:
-  - package-ecosystem: "" # See documentation for possible values
-    directory: "/" # Location of package manifests
+  - package-ecosystem: "npm"
+    directory: "/"
     schedule:
       interval: "weekly"
+    open-pull-requests-limit: 5
     reviewers:
       - "gardenlinux/garden-linux-maintainers"
+    groups:
+      npm:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "gardenlinux/garden-linux-maintainers"
+    groups:
+      pip:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "gardenlinux/garden-linux-maintainers"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
