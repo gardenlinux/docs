@@ -40,7 +40,7 @@ Quality is enforced in two complementary ways:
 For how to use the custom components and front-matter fields referenced
 throughout this guide, see
 [VitePress Features](./vitepress-features.md). To rework AI-generated phrasing,
-use the [humanizer skill](/.agents/skills/humanizer/SKILL.md) (see
+use the [humanizer skill](../../../.agents/skills/humanizer/SKILL.md) (see
 [AI-generated phrasing to avoid](#ai-generated-phrasing-to-avoid)).
 
 ## Automated Quality Checks (GLDQ)
@@ -236,7 +236,7 @@ quality through repetition. Avoid these categories when authoring:
 - Generic conclusions (`By following these steps`, `You are now ready to`)
 - Emoji outside code fences (also enforced by the GLDQ `EMOJI` rule)
 
-The [humanizer skill](/.agents/skills/humanizer/SKILL.md) is the single source
+The [humanizer skill](../../../.agents/skills/humanizer/SKILL.md) is the single source
 of truth for the full pattern catalog, each with a before-to-after example and a
 minimal-rewrite workflow. See also
 [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing),
