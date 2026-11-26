@@ -285,7 +285,7 @@ This fetches the latest from `ref` and updates commit locks.
 
 ### Repository → Temporary Directory
 
-```
+```text
 Source Repo                    Temp Directory
 ├── docs/                  →   /tmp/xyz/repo-name/
 │   ├── tutorials/             ├── tutorials/
@@ -297,7 +297,7 @@ Source Repo                    Temp Directory
 
 ### Temporary Directory → Docs Output
 
-```
+```text
 Temp Directory                 Docs Output
 /tmp/xyz/repo-name/        →
 ├── tutorials/                 docs/

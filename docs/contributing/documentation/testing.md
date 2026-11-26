@@ -23,7 +23,7 @@ Test suite documentation for the documentation aggregation system.
 
 ## Test Structure
 
-```
+```text
 tests/
 ├── conftest.py           # pytest configuration
 ├── fixtures/             # Test data

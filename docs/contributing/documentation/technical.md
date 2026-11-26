@@ -23,7 +23,7 @@ Source code documentation for the documentation aggregation system.
 
 ## Source Code Structure
 
-```
+```text
 src/
 ├── aggregate.py          # CLI entry point
 ├── migration_tracker.py  # Standalone utility

@@ -117,7 +117,7 @@ Auto-linking creates links for glossary terms without requiring explicit markers
 
 With auto-linking enabled, input text:
 
-```
+```text
 Deploy Gardenlinux on AWS using KVM virtualization.
 ```
 
@@ -159,7 +159,7 @@ make glossary-check
 
 **Term not found:**
 
-```
+```text
 [Warning][auto-glossary] Term 'xyz' not found in glossary (referenced in file.md)
 ```
 
@@ -167,7 +167,7 @@ The marker remains unchanged. Add the term to the glossary, fix the spelling, or
 
 **Anchor collision:**
 
-```
+```text
 [Warning][auto-glossary] Anchor collision detected:
   'Term 1' and 'Term 2' both generate anchor 'term-1-2'
 ```
@@ -211,3 +211,7 @@ python3 -m pytest tests/unit/test_auto_glossary*.py tests/unit/test_generate_anc
 ```
 
 Test coverage includes format validation, anchor generation, alias extraction, auto-linking, and integration tests.
+
+## Related Topics
+
+<RelatedTopics />

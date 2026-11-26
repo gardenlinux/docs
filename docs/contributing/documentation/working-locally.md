@@ -103,6 +103,8 @@ export GH_COM_TOKEN=$(gh auth token --hostname github.com)
 make aggregate
 ```
 
+:::
+
 :::tip
 You can add the `export` statement to you Shell's configuration file to avoid having to re-export it in different sessions.
 
@@ -210,7 +212,7 @@ make test
 
 After aggregation, your docs directory will look like:
 
-```
+```text
 docs/
 ├── tutorials/             # Aggregated tutorials
 ├── how-to/                # Aggregated guides

@@ -12,6 +12,13 @@ exclude:
     paths:
       - "docs/reference/adr/**"
   - rules:
+      - "RELATED-TOPICS-PRESENT"
+    paths:
+      - "docs/contributing/security.md"
+      - "docs/contributing/workflow.md"
+      - "docs/reference/flavor-matrix.md"
+      - "docs/reference/glossary.md"
+  - rules:
       - "CODE-LANG"
     paths:
       - "docs/reference/adr/0014-enforce-pr-references-in-commits.md"
@@ -21,6 +28,10 @@ exclude:
       - "FM-REPO"
     paths:
       - "docs/index.md"
+      - "docs/reference/releases/release-notes/**"
+  - rules:
+      - "FM-REPO"
+      - "RELATED-TOPICS-PRESENT"
+    paths:
       - "docs/reference/python-gardenlinux-lib-api.md"
       - "docs/reference/python-gardenlinux-lib-cli.md"
-      - "docs/reference/releases/release-notes/**"

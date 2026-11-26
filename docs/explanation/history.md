@@ -8,7 +8,7 @@ related_topics:
   - /explanation/release-hierarchy.md
   - /reference/releases/release-lifecycle.md
   - /explanation/architecture.md
-  - /explanation/compliance.md
+  - /explanation/compliance-frameworks.md
   - /explanation/secure-boot.md
 order: 1
 github_org: gardenlinux
@@ -109,3 +109,7 @@ replaced without any manual intervention.
 | Aug 2026 | Licensing/Legal | **License changed to Apache 2.0** — the project re-licenses under the Apache License 2.0. | - |
 | Aug 2026 | Feature | **Cross-version in-place updates** — in-place updates across minor and major versions are supported using [`gardenlinux-update`](/reference/features/_usi). | [1877.27](/reference/releases/release-notes/1877-27) / [2150.13.0](/reference/releases/release-notes/2150-13-0) |
 | Oct 2026 | Feature (Compliance) | **FIPS 140-3 submission** — all crypto modules have been successfully submitted to NIST and are now in the review phase. | - |
+
+## Related Topics
+
+<RelatedTopics />
