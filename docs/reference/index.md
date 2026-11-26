@@ -2,6 +2,8 @@
 title: Reference
 description: Information-oriented technical descriptions and specifications
 order: 5
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Reference

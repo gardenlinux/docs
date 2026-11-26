@@ -20,6 +20,7 @@ docs/contributing/**
 !docs/contributing/documentation/
 !docs/contributing/documentation/**
 !docs/contributing/documentation_workflow.md
+docs/contributing/documentation/features.md
 docs/explanation/**
 !docs/explanation/index.md
 !docs/explanation/history.md

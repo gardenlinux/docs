@@ -26,7 +26,7 @@
       "url": "https://github.com/gardenlinux/python-gardenlinux-lib",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "40c75314a77f3c6b08835d7ba019ac4b202b9816",
+      "commit": "51a93bcab598b762753b073bd22ee00dcf622e3a",
       "structure": "sphinx",
       "target_map": {
         "cli.md": "reference/python-gardenlinux-lib-cli.md",
@@ -59,28 +59,28 @@
       "url": "https://github.com/gardenlinux/glrd",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "0da9dd60384959e07fda23f6e29f52b7f1da00aa"
+      "commit": "06ed95af19f2680579917c4c251f4bf1c3d1d81a"
     },
     {
       "name": "gardenlinux-nvidia-installer",
       "url": "https://github.com/gardenlinux/gardenlinux-nvidia-installer",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "7dd97a72be5e54cd8ba2e531c32c3a56e2e07fa0"
+      "commit": "bf88ee1255b59d00b9c176968cdd24a49bd6692a"
     },
     {
       "name": "glci",
       "url": "https://github.com/gardenlinux/glci",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "aba79d68db666b3095dd196a68c13dffbf28e838"
+      "commit": "bf8eca79b45eadc40efc0f40a274ae93a33da742"
     },
     {
       "name": "daily",
       "url": "https://github.com/gardenlinux/daily",
       "docs_path": "docs",
       "ref": "gh-pages",
-      "commit": "490c3b4bc74a03b4895497ebac5be29401aa426b",
+      "commit": "082d7ec9b88b709031747bd16d01a895020b6cbf",
       "docs_paths": [
         "docs/**",
         ".github/workflows/docs-check.yml",

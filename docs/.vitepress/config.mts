@@ -103,6 +103,8 @@ export default defineConfig({
     /test\//,
     /tests\//,
     /samples\//,
+    // humanizer skill lives in .agents/ outside the published docs root
+    /\.agents\/skills\/humanizer\/SKILL/,
   ],
   head: [
     [

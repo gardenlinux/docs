@@ -2,6 +2,8 @@
 title: Tutorials
 description: Learning-oriented guides that take you through a series of steps to complete a project
 order: 2
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Tutorials

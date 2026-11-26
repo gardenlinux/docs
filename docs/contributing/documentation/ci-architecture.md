@@ -13,6 +13,8 @@ related_topics:
   - /contributing/documentation/technical.md
   - /contributing/documentation/testing.md
   - /contributing/documentation/vitepress-features.md
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Documentation CI Architecture

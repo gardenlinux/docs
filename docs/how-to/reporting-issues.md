@@ -2,6 +2,11 @@
 title: Reporting Issues
 description: How to report issues when working with garden linux
 order: 999
+related_topics:
+  - /contributing/workflow.md
+  - /contributing/documentation/documentation_workflow.md
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Reporting Issues
@@ -48,3 +53,7 @@ and analyze the issue._
 ## Documentation Issue?
 
 Did you find something to improve in this documentation? [Open a new issue](https://github.com/gardenlinux/docs/issues/new/choose).
+
+## Related Topics
+
+<RelatedTopics />

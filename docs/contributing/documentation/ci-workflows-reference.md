@@ -13,6 +13,8 @@ related_topics:
   - /contributing/documentation/technical.md
   - /contributing/documentation/testing.md
   - /contributing/documentation/vitepress-features.md
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Documentation CI Workflows Reference
@@ -461,7 +463,7 @@ The `client_payload` (or `inputs` for manual dispatch) must contain:
 
 All automated branches follow the pattern:
 
-```
+```text
 auto/<repo-name>/<pr-number>
 ```
 

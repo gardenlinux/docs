@@ -13,6 +13,8 @@ related_topics:
   - /contributing/documentation/configuration.md
   - /contributing/documentation/testing.md
   - /contributing/documentation/vitepress-features.md
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Documentation Aggregation Technical Reference
@@ -21,7 +23,7 @@ Source code documentation for the documentation aggregation system.
 
 ## Source Code Structure
 
-```
+```text
 src/
 ├── aggregate.py          # CLI entry point
 ├── migration_tracker.py  # Standalone utility

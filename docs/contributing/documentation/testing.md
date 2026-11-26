@@ -13,6 +13,8 @@ related_topics:
   - /contributing/documentation/configuration.md
   - /contributing/documentation/technical.md
   - /contributing/documentation/vitepress-features.md
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Documentation Aggregation Testing Guide
@@ -21,7 +23,7 @@ Test suite documentation for the documentation aggregation system.
 
 ## Test Structure
 
-```
+```text
 tests/
 ├── conftest.py           # pytest configuration
 ├── fixtures/             # Test data

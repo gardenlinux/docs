@@ -1,11 +1,14 @@
 ---
 title: "Glossary"
+description: "Lookup definitions for Garden Linux specific terminology"
 order: 1
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Glossary
 
-This glossary provides definitions for Garden Linux-specific terminology. To contribute additional terms or improve existing definitions, visit our [contributing guide](../contributing/index.md).
+This glossary provides definitions for Garden Linux specific terminology. To contribute additional terms or improve existing definitions, visit our [contributing guide](../contributing/index.md).
 
 **Jump to:** [A](#a) · [B](#b) · [C](#c) · [D](#d) · [E](#e) · [F](#f) · [G](#g) · [I](#i) · [K](#k) · [L](#l) · [M](#m) · [N](#n) · [O](#o) · [P](#p) · [Q](#q) · [R](#r) · [S](#s) · [T](#t) · [U](#u) · [V](#v)
 
@@ -33,7 +36,7 @@ The processor architecture for which a Garden Linux image is built. Supported ar
 
 The **artifact base name** is the versioned flavor qualified with a short commit hash:
 
-```
+```text
 {cname}-{arch}-{version}-{short_commit}
 ```
 
@@ -63,7 +66,7 @@ The [gardenlinux/builder](https://github.com/gardenlinux/builder) component that
 
 A **versioned flavor** is the flavor qualified with a version — the string passed to the `./build` script to invoke a build:
 
-```
+```text
 {cname}-{arch}-{version}
 ```
 
@@ -100,7 +103,7 @@ A Garden Linux image optimized for cloud platforms (AWS, Azure, GCP, etc.) with 
 
 The **cname** is the minimal, canonically-sorted encoding of the feature set — and only the feature set. Architecture, version, and commit are not part of the cname:
 
-```
+```text
 cname = {feature-encoding}
 ```
 
@@ -196,7 +199,7 @@ A feature of type `flag` represents a lightweight modifier. Flags are identified
 
 A **flavor** is the cname qualified with a target architecture:
 
-```
+```text
 {cname}-{arch}
 ```
 

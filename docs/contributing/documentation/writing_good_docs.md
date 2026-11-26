@@ -13,6 +13,8 @@ related_topics:
   - /contributing/documentation/technical.md
   - /contributing/documentation/testing.md
   - /contributing/documentation/vitepress-features.md
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Documentation Quality Markers
@@ -23,6 +25,127 @@ as helpful and professional as possible.
 These markers can roughly be split into required markers, that every
 documentation submission should have, and those which are context dependent and
 therefore optional.
+
+Quality is enforced in two complementary ways:
+
+- **Automated checks** run in CI and locally. The
+  [Garden Linux Docs Quality (GLDQ)](#automated-quality-checks-gldq) tool
+  verifies structural markers, and additional tools cover spelling, dead links,
+  and inclusive language.
+- **Human review** covers everything a machine cannot judge, such as technical
+  accuracy, readability, and consistent terminology. The
+  [Documentation Workflow](./documentation_workflow.md) describes who reviews and
+  how.
+
+For how to use the custom components and front-matter fields referenced
+throughout this guide, see
+[VitePress Features](./vitepress-features.md). To rework AI-generated phrasing,
+use the [humanizer skill](../../../.agents/skills/humanizer/SKILL.md) (see
+[AI-generated phrasing to avoid](#ai-generated-phrasing-to-avoid)).
+
+## Automated Quality Checks (GLDQ)
+
+Garden Linux Docs Quality (GLDQ) is a linter that checks documentation for the
+structural markers described in this guide. It runs in CI on every pull request
+with `--strict`, which treats warnings as failures and blocks merges until the
+findings are resolved.
+
+### Running GLDQ locally
+
+Run GLDQ before opening a pull request:
+
+```bash
+# Report findings (warnings do not fail the run)
+make docs-check
+
+# Treat warnings as failures, matching CI
+make docs-check-strict
+
+# Call the tool directly on any path
+python3 src/gldq.py docs/
+
+# List every rule with its severity
+python3 src/gldq.py --list-rules
+```
+
+Spelling, dead links, and inclusive language are checked by separate tools:
+`make spelling`, `make linkcheck`, and `make woke`.
+
+### Rules
+
+GLDQ findings have one of two severities. An `error` always fails the run; a
+`warning` fails only under `--strict` (and therefore in CI).
+
+#### Front matter
+
+| Rule | Severity | What it checks |
+| --- | --- | --- |
+| `FM-YAML` | error | Front matter must be valid YAML. |
+| `FM-TITLE` | warning | Front matter must include a non-empty `title`. |
+| `FM-DESC` | warning | Front matter must include a non-empty `description`. |
+| `FM-ORDER` | warning | `order` must be an integer when present. |
+| `FM-REPO` | error | Front matter must include `github_org` and `github_repo`. |
+| `FM-RELATED` | error | `related_topics` must be a list of existing documents. |
+
+#### Headings
+
+| Rule | Severity | What it checks |
+| --- | --- | --- |
+| `H1-ONE` | warning | Document must have exactly one level-1 heading. |
+| `H1-EMPTY` | error | Headings must not be empty. |
+| `HEAD-SKIP` | warning | Heading levels must not be skipped. |
+
+#### Code blocks
+
+| Rule | Severity | What it checks |
+| --- | --- | --- |
+| `CODE-LANG` | warning | Fenced code blocks must declare a language. |
+| `CODE-BALANCE` | error | Fenced code blocks must be closed. |
+
+#### Media and links
+
+| Rule | Severity | What it checks |
+| --- | --- | --- |
+| `IMG-ALT` | error | Images must have non-empty alt text. |
+| `LINK-TEXT` | error | Links must use descriptive link text, not "click here". |
+| `EMOJI` | warning | Emoji are not allowed outside code fences. |
+
+#### Components
+
+| Rule | Severity | What it checks |
+| --- | --- | --- |
+| `SECTION-INDEX` | error | Section index pages must include `<SectionIndex />`. |
+| `RELATED-TOPICS-END` | error | `<RelatedTopics />` must be the last content block. |
+| `RELATED-TOPICS-FM` | error | `<RelatedTopics />` requires `related_topics` in front matter. |
+| `RELATED-TOPICS-PRESENT` | warning | Non-index pages should include `<RelatedTopics />`. |
+
+#### Callouts
+
+| Rule | Severity | What it checks |
+| --- | --- | --- |
+| `CALLOUT-INVALID-TYPE` | error | Container type must be `info`, `tip`, `warning`, `danger`, or `details`. |
+| `CALLOUT-GITHUB-STYLE` | error | GitHub-style callouts are rejected; use VitePress `:::` syntax. |
+| `CALLOUT-UNCLOSED` | error | VitePress containers must be closed with `:::`. |
+
+### Suppressing and excluding findings
+
+When a finding does not apply, suppress it inline with a comment rather than
+leaving the whole file unchecked:
+
+```markdown
+<!-- gldq: disable-next-line EMOJI -->
+<!-- gldq: disable EMOJI -->
+<!-- gldq: disable-file CODE-LANG -->
+```
+
+`disable-next-line` affects the following line, `disable` affects the rest of
+the file from that point, and `disable-file` affects the entire file. Each
+directive takes one or more rule IDs.
+
+Files that cannot be edited in this repository (for example aggregated content)
+are handled by the rule-aware exclusion file `.gldq-exclude.yml`, which maps rule
+patterns to path patterns. Prefer inline suppressions for authored content and
+reserve the exclusion file for generated files.
 
 ## Required Markers
 
@@ -97,40 +220,35 @@ readers to action.
 
 #### AI-generated phrasing to avoid
 
-AI-assisted writing introduces recognizable patterns that reduce documentation quality through repetition. Avoid these categories when authoring (see also [Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing), [softaworks/agent-toolkit humanizer skill](https://github.com/softaworks/agent-toolkit/blob/3027f20f3181758385a1bb8c022d4041dfb4de84/skills/humanizer/SKILL.md), and [blader/humanizer](https://github.com/blader/humanizer/blob/1b48564898e999219882660237fde01bf4843a0f/SKILL.md)):
+AI-assisted writing introduces recognizable patterns that reduce documentation
+quality through repetition. Avoid these categories when authoring:
 
-:::details Examples of common LLM patterns
+- Hype openers and filler adjectives (`unlock`, `seamlessly`, `robust`,
+  `leverage`)
+- Transitional bloat (`Moreover`, `It's worth noting`)
+- Promotional flourish (`world-class`, `next-generation`, `game-changing`)
+- Hedging and rhetorical-question openers (`In today's fast-paced world`,
+  `Ever wondered...?`)
+- Chatbot artifacts and sycophancy (`Certainly!`, `Great question!`,
+  `excellent choice`)
+- Copula avoidance (`serves as` where `is` fits), negative parallelisms
+  (`not just ... but`), and synonym cycling for one concept
+- Generic conclusions (`By following these steps`, `You are now ready to`)
+- Emoji outside code fences (also enforced by the GLDQ `EMOJI` rule)
 
-- **`HYPE-OPEN` - Hype openers and filler adjectives** (`delve`, `dive into`, `embark`, `unlock`, `elevate`, `seamlessly`, `robust`, `comprehensive`, `cutting-edge`, `powerful`, `leverage`, `harness`, `empower`, `streamline`, `effortless`, `tapestry`, `intricate`, `interplay`, `realm`, `pivotal`, `crucial`, `nuanced`, `dynamic`, `multifaceted`, `paradigm`, `synergy`, `holistic`, `unleash`, `foster`). Example: "This guide will help you unlock the full potential of..." → "This guide covers..."
-- **`TRANS-BLOAT` - Transitional bloat** (`Moreover`, `Furthermore`, `In conclusion`, `In summary`, `It's worth noting`, `It's important to note`). Example: "Furthermore, the builder supports..." → "The builder supports..."
-- **`PROMO` - Promotional flourish** (`world-class`, `best-in-class`, `next-generation`, `revolutionary`, `game-changing`, `state-of-the-art`, `seamless`, `unparalleled`, `unrivaled`, `premier`). Example: "a next-generation build system" → "a purpose-built build system"
-- **`HEDGE` - Contextual hedging openers** (`In today's fast-paced world`, `In the ever-evolving landscape of`, `As we all know`, `It goes without saying`). Delete the opener and start with the actual statement.
-- **`PRONOUN-OVERREACH` -  Presumptuous collective pronouns** (`we've all been there`, `let's explore together`, `join me on this journey`). Use second person or neutral framing instead.
-- **`RHETQ` - Rhetorical-question openers** (`Ever wondered…?`, `What if I told you…?`). State the topic directly.
-- **`CANONICAL-LINT` - Canonical style anti-patterns** (`please`, `kindly`, `note that` as filler, ornamental parentheticals such as `(and this is important)`). Remove the filler; keep the statement.
-- **`EM-DASH-DRAMA` - Em-dash as rhetorical pause** — em-dash used before a hype word or as a dramatic mid-sentence aside (e.g., `— unlocking`, `— making it`). Legitimate parenthetical em-dashes are fine.
-- **`LEGACY-PUFF` - Significance or legacy claims** (`has left a lasting legacy`, `has had a profound impact on`, `stands as a testament to`, `remains a cornerstone of`). Replace with a specific, verifiable statement or delete.
-- **`NOTABILITY-PUFF` - Notability flex** (`widely regarded as`, `has gained recognition`, `experts agree`, `industry leaders have noted`) *(advisory)*. Cite a source or delete.
-- **`ING-BLOAT` - Gerund-chain abstractions** — chains of -ing nouns as subject or object where a finite verb would be clearer. Example: "Configuring and deploying involves setting up..." → "To deploy, set up..."
-- **`WEASEL` - Vague attributions** (`some say`, `many believe`, `it has been suggested`, `critics argue`). Name the source or rewrite as a factual claim.
-- **`FUTURE-OUTLOOK` - "Challenges and Future Prospects" boilerplate** — section headings or closing paragraphs following the AI outline pattern (`Looking Ahead`, `Future Directions`, `The Road Ahead`). Replace with a specific heading or delete.
-- **`COPULA-DODGE` - Copula avoidance** (`serves as`, `functions as`, `acts as`, `operates as`, `plays the role of` where "is" or a concrete verb suffices). Example: "serves as the single source of truth" → "is the single source of truth"
-- **`NEG-PARALLEL` - Negative parallelisms** (`not just … but`, `not only … but also`, `more than just`). State what the subject does directly.
-- **`RULE-OF-THREE` - Rule-of-three overuse** — exactly three adjectives or nouns grouped for rhetorical balance rather than precision *(advisory)*. Use the most precise term.
-- **`SYN-CYCLE` - Synonym cycling** — using different words for the same concept within a short span (e.g., "build manifest", "build descriptor", "build specification" for the same thing). Pick one term and use it throughout.
-- **`FALSE-RANGE` - False ranges** (`from … to …` implying broad coverage from two arbitrary endpoints). List specific items instead.
-- **`BOLD-OVERUSE` - Boldface overuse** — bold applied to adjectives, adverbs, or transitional words for decoration rather than to mark key terms or critical warnings.
-- **`EMOJI` - Emojis** — any emoji outside a code fence. Delete; replace with a VitePress callout if semantic meaning is needed.
-- **`CHATBOT-ARTIFACT` - Chatbot artifacts** (`Certainly!`, `Great question!`, `As I mentioned`, `I hope this helps`, `Feel free to ask`). Delete entirely.
-- **`SYCOPHANT` - Sycophantic tone** (`great job`, `well done`, `excellent choice`, `congratulations on`). Delete; state the outcome directly.
-- **`OVER-HEDGE` - Excessive hedging** — two or more hedges in one clause (`might possibly`, `could potentially`, `may perhaps`). Use at most one hedge where genuine uncertainty exists.
-- **`GENERIC-CONCLUSION` - Generic positive conclusions** (`By following these steps`, `Armed with this knowledge`, `You are now ready to`, `You now have a solid understanding of`). Delete or replace with a concrete next step or link.
+The [humanizer skill](../../../.agents/skills/humanizer/SKILL.md) is the single source
+of truth for the full pattern catalog, each with a before-to-after example and a
+minimal-rewrite workflow. See also
+[Wikipedia: Signs of AI writing](https://en.wikipedia.org/wiki/Wikipedia:Signs_of_AI_writing),
+the [softaworks/agent-toolkit humanizer skill](https://github.com/softaworks/agent-toolkit/blob/3027f20f3181758385a1bb8c022d4041dfb4de84/skills/humanizer/SKILL.md),
+and [blader/humanizer](https://github.com/blader/humanizer/blob/1b48564898e999219882660237fde01bf4843a0f/SKILL.md).
 
-:::
+Filler words (`simply`, `just`, `easy`/`easily`, `actually`, `basically`,
+`obviously`) are a separate category governed by the style guide's
+banned-filler-word rule.
 
-Filler words (`simply`, `just`, `easy`/`easily`, `actually`, `basically`, `obviously`) are a separate category governed by the style guide's banned-filler-word rule.
-
-These categories describe concrete patterns to avoid at authoring time. The "no vague polish" refusal policy still applies for reviewers: contributors must identify a specific pattern from this list.
+The "no vague polish" refusal policy applies for reviewers: contributors must
+identify a specific pattern from the humanizer catalog when reworking phrasing.
 
 ### Usability & Accessibility
 
@@ -217,28 +335,46 @@ Version-specific content should include:
 
 ## Checklist
 
-Use this checklist when reviewing or submitting documentation:
+The checklist is split by who verifies each item. The automated half is already
+enforced by tooling, so do not tick it by hand; run the commands instead. The
+human review half covers everything a machine cannot judge.
 
-### Core Markers
+### Automated checks (enforced in CI)
+
+Run these before opening a pull request. They fail the build if findings remain:
+
+```bash
+make docs-check-strict   # GLDQ structural markers
+make spelling            # spelling
+make linkcheck           # dead links
+make woke                # inclusive language
+```
+
+`make docs-check-strict` covers, among others: image alt text
+([`IMG-ALT`](#media-and-links)), descriptive link text
+([`LINK-TEXT`](#media-and-links)), code block languages
+([`CODE-LANG`](#code-blocks)), heading hierarchy
+([`HEAD-SKIP`](#headings) and [`H1-ONE`](#headings)), emoji
+([`EMOJI`](#media-and-links)), related topics
+([`RELATED-TOPICS-PRESENT`](#components)), front matter
+([`FM-*`](#front-matter)), and callout syntax ([`CALLOUT-*`](#callouts)). See the
+[GLDQ rules](#rules) for the full list. Spelling, dead links, and inclusive
+language are handled by `make spelling`, `make linkcheck`, and `make woke`.
+
+### Human review checklist
+
+A reviewer must confirm the items that tooling cannot verify:
 
 - All code and commands are tested and working
 - Prerequisites are clearly stated
 - Expected output is shown for verification steps
-- Document has clear structure with descriptive headings
 - One main idea per paragraph
 - Sentences are concise and use active voice
 - Neutral and professional language throughout
-- Gender-neutral language used
 - Consistent terminology (no synonym confusion)
 - Project-specific abbreviations link to Glossary
-- All images have descriptive alt text
-- Links use descriptive text (not "click here")
-- Proper heading hierarchy maintained
-- Code examples have syntax highlighting
 - Color is not the only indicator in visual media
-- All links verified as working
-- Document is discoverable via navigation/index
-- Cross-referenced from related documentation
+- Document is discoverable and cross-referenced in the right context
 - Clear ownership indicated
 - No AI-tell phrasing (see [AI-generated phrasing to avoid](#ai-generated-phrasing-to-avoid))
 

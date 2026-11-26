@@ -2,6 +2,8 @@
 title: "Introduction"
 description: "How Garden Linux documentation is organized"
 order: 1
+github_org: gardenlinux
+github_repo: docs
 ---
 
 # Garden Linux
