@@ -186,6 +186,26 @@ export default defineConfig({
       //   ],
       // },
       // { text: "Contributing", link: "/contributing/" },
+      { text: "Community",
+        items: [
+          {
+            text: "Charter",
+            link: "/community/charter/",
+          },
+          {
+            text: "Members",
+            link: "/community/members/",
+          },
+          {
+            text: "Outreach",
+            link: "/community/outreach/",
+          },
+          {
+            text: "Adopters",
+            link: "/community/adopters/",
+          },
+        ],
+      },
     ],
 
     // footer: {
