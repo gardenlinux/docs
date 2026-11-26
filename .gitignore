@@ -17,6 +17,7 @@ docs/contributing/**
 !docs/contributing/assets/
 !docs/contributing/assets/**
 !docs/contributing/index.md
+!docs/contributing/llm_policy.md
 !docs/contributing/documentation/
 !docs/contributing/documentation/**
 !docs/contributing/documentation_workflow.md
