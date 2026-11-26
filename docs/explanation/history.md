@@ -8,7 +8,7 @@ related_topics:
   - /explanation/release-hierarchy.md
   - /reference/releases/release-lifecycle.md
   - /explanation/architecture.md
-  - /explanation/compliance.md
+  - /explanation/compliance-frameworks.md
   - /explanation/secure-boot.md
 order: 1
 github_org: gardenlinux
