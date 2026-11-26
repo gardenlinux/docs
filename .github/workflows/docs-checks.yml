@@ -222,5 +222,8 @@ jobs:
         run: pip install pyyaml
 
       - name: Run Garden Linux Docs Quality
-        continue-on-error: true
-        run: python3 src/gldq.py docs/ --format github
+        run: python3 src/gldq.py docs/ --strict
+
+      - name: Publish Garden Linux Docs Quality annotations
+        if: always()
+        run: python3 src/gldq.py docs/ --strict --format github
