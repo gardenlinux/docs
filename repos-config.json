@@ -38,7 +38,7 @@
       "url": "https://github.com/gardenlinux/package-linux",
       "docs_path": "docs",
       "ref": "main",
-      "commit": "39d7639fdaceb3249732eaf8286898a011067600"
+      "commit": "233ec051633bc6d100d6dd509d0c5fed69c8f5ef"
     },
     {
       "name": "package-build",
