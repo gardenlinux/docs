@@ -77,7 +77,7 @@ def generate_flavor_matrix_docs(docs_dir: Path, gardenlinux_repo_dir: Path) -> b
             flavor_base = flavor.replace(f"-{arch}", "")
 
             # Explicit features from cname
-            explicit = FeaturesParser.get_flavor_as_feature_set(flavor_base)
+            explicit = FeaturesParser.get_cname_as_feature_set(flavor_base)
 
             # Full recursive feature set
             try:

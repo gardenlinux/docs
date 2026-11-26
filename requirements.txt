@@ -3,8 +3,8 @@ black
 isort
 pytest
 pyyaml
-glrd @ git+https://github.com/gardenlinux/glrd.git@v5.1.0
-gardenlinux @ git+https://github.com/gardenlinux/python-gardenlinux-lib.git@0.10.24
+glrd @ git+https://github.com/gardenlinux/glrd.git@v5.2.0
+gardenlinux @ git+https://github.com/gardenlinux/python-gardenlinux-lib.git@1.0.6
 sphinx
 sphinx-markdown-builder
 sphinx-rtd-theme
