@@ -1,6 +1,6 @@
 ---
 title: "Glossary"
-description: "Lookup definitions for Garden Linux specifc terminology"
+description: "Lookup definitions for Garden Linux specific terminology"
 order: 1
 github_org: gardenlinux
 github_repo: docs
